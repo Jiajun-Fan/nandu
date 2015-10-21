@@ -1,7 +1,7 @@
 package main
 
 import (
-	"nandu"
+	"github.com/Jiajun-Fan/nandu"
 )
 
 func main() {
