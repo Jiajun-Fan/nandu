@@ -15,6 +15,7 @@ type TumblrPage struct {
 	database *Database
 	page     int
 	retry    int
+	blog     *TumblrSqlBlog
 }
 
 func NewTumblrPages(json *JsonTasks) []Task {
@@ -35,6 +36,13 @@ func NewTumblrPages(json *JsonTasks) []Task {
 				task.oauth = client
 				task.database = database
 				task.retry = 3
+				b := new(TumblrSqlBlog)
+				b.Name = blogger
+				task.database.db.Where("name = ?", blogger).First(b)
+				if task.database.db.NewRecord(b) {
+					task.database.db.Create(b)
+				}
+				task.blog = b
 				ret = append(ret, task)
 			}
 		}
@@ -49,8 +57,8 @@ func (task *TumblrPage) Run(q *Q) (ret []Task) {
 
 	defer func() {
 		if retry != nil && retry.retry > 0 {
-            retry.retry -= 1
-            Debug().V(DebugWarning).Printf("retry %s\n", task.url)
+			retry.retry -= 1
+			Debug().V(DebugWarning).Printf("retry %s\n", task.url)
 			ret = append(ret, retry)
 		}
 	}()
@@ -73,10 +81,10 @@ func (task *TumblrPage) Run(q *Q) (ret []Task) {
 	nophoto := true
 	for i := range resp.Data.Posts {
 		rp := resp.Data.Posts[i]
-        if rp.Type != "photo" {
-            continue
-        }
-        nophoto = false
+		if rp.Type != "photo" {
+			continue
+		}
+		nophoto = false
 		newPost := new(TumblrSqlPost)
 		task.database.db.Where("pid = ?", rp.Pid).First(newPost)
 		if task.database.db.NewRecord(newPost) {
@@ -93,6 +101,8 @@ func (task *TumblrPage) Run(q *Q) (ret []Task) {
 		task.url = fmt.Sprintf("%s?offset=%d", task.base, task.page)
 		task.retry = 3
 		ret = append(ret, task)
+	} else {
+		task.database.db.Model(task.blog).UpdateColumn("Count", resp.Data.Blog.Posts)
 	}
 	retry = nil
 
@@ -143,7 +153,7 @@ type TumblrSqlPhoto struct {
 	Url    string `json:"url"`
 	Width  int    `json:"width"`
 	Height int    `json:"height"`
-    Done bool
+	Done   bool
 }
 
 type TumblrSqlPost struct {
@@ -151,6 +161,12 @@ type TumblrSqlPost struct {
 	Pid    uint64
 	Title  string
 	Photos []TumblrSqlPhoto
+}
+
+type TumblrSqlBlog struct {
+	Id    uint
+	Count uint
+	Name  string
 }
 
 func NewTumblrSqlPost(r *TumblrResponsePost) *TumblrSqlPost {
@@ -162,7 +178,7 @@ func NewTumblrSqlPost(r *TumblrResponsePost) *TumblrSqlPost {
 		photo.Url = rp.OrigSize.Url
 		photo.Width = rp.OrigSize.Width
 		photo.Height = rp.OrigSize.Height
-        photo.Done = false
+		photo.Done = false
 		post.Photos = append(post.Photos, photo)
 	}
 	post.Pid = r.Pid

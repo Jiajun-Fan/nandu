@@ -18,6 +18,7 @@ func NewDatabase(json *JsonDatabase) *Database {
 	if json.Init {
 		db.CreateTable(&TumblrSqlPhoto{})
 		db.CreateTable(&TumblrSqlPost{})
+		db.CreateTable(&TumblrSqlBlog{})
 	}
 	return database
 }
