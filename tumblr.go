@@ -93,7 +93,7 @@ func (task *TumblrPage) Run(q *Q) (ret []Task) {
 		}
 	}
 	task.page += 20
-	if resp.Data.Blog.Posts > task.blog.Count+task.page {
+	if resp.Data.Blog.Posts > int(task.blog.Count)+task.page {
 		task.url = fmt.Sprintf("%s?offset=%d", task.base, task.page)
 		task.retry = 3
 		ret = append(ret, task)
