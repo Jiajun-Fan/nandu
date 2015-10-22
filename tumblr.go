@@ -77,18 +77,14 @@ func (task *TumblrPage) Run(q *Q) (ret []Task) {
 
 	Debug().V(DebugInfo).Printf("%s %d\n", task.url, resp.Data.Blog.Posts)
 
-	newposts := 0
-	nophoto := true
 	for i := range resp.Data.Posts {
 		rp := resp.Data.Posts[i]
 		if rp.Type != "photo" {
 			continue
 		}
-		nophoto = false
 		newPost := new(TumblrSqlPost)
 		task.database.db.Where("pid = ?", rp.Pid).First(newPost)
 		if task.database.db.NewRecord(newPost) {
-			newposts++
 			post := NewTumblrSqlPost(&rp)
 			task.database.db.Create(post)
 			if task.database.db.NewRecord(post) {
@@ -97,7 +93,7 @@ func (task *TumblrPage) Run(q *Q) (ret []Task) {
 		}
 	}
 	task.page += 20
-	if resp.Data.Blog.Posts >= task.page && (newposts > 0 || nophoto == true) {
+	if resp.Data.Blog.Posts > task.blog.Count+task.page {
 		task.url = fmt.Sprintf("%s?offset=%d", task.base, task.page)
 		task.retry = 3
 		ret = append(ret, task)
