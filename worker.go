@@ -28,7 +28,7 @@ func (worker *CoWorker) getName() string {
 }
 
 func (worker *CoWorker) Run() {
-	debug.V(DebugInfo).Printf("'%s' started\n", worker.name)
+	DebugV(DebugInfo).Printf("'%s' started\n", worker.name)
 	worker.started_ = true
 	for {
 		task := worker.q.Pop(worker)
@@ -42,7 +42,7 @@ func (worker *CoWorker) Run() {
 		}
 	}
 	worker.q.workerCount.Done()
-	debug.V(DebugInfo).Printf("'%s' exit\n", worker.name)
+	DebugV(DebugInfo).Printf("'%s' exit\n", worker.name)
 }
 
 func NewCoWorker(q *Q) Worker {

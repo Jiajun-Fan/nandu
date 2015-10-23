@@ -58,7 +58,7 @@ func (task *TumblrPage) Run(q *Q) (ret []Task) {
 	defer func() {
 		if retry != nil && retry.retry > 0 {
 			retry.retry -= 1
-			Debug().V(DebugWarning).Printf("retry %s\n", task.url)
+			DebugV(DebugWarning).Printf("retry %s\n", task.url)
 			ret = append(ret, retry)
 		}
 	}()
@@ -75,7 +75,7 @@ func (task *TumblrPage) Run(q *Q) (ret []Task) {
 	resp := new(TumblrResponse)
 	err = json.Unmarshal(bytes, resp)
 
-	Debug().V(DebugInfo).Printf("%s %d\n", task.url, resp.Data.Blog.Posts)
+	DebugV(DebugInfo).Printf("%s %d\n", task.url, resp.Data.Blog.Posts)
 
 	for i := range resp.Data.Posts {
 		rp := resp.Data.Posts[i]
@@ -88,7 +88,7 @@ func (task *TumblrPage) Run(q *Q) (ret []Task) {
 			post := NewTumblrSqlPost(&rp)
 			task.database.db.Create(post)
 			if task.database.db.NewRecord(post) {
-				Debug().V(DebugError).Printf("can't create posts id %d url %s\n", post.Pid, task.url)
+				DebugV(DebugError).Printf("can't create posts id %d url %s\n", post.Pid, task.url)
 			}
 		}
 	}

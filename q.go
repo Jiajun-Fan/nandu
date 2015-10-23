@@ -37,7 +37,7 @@ func (q *Q) Pop(w Worker) Task {
 			if remain := time.Now().Unix() - q.timeout - q.last_push; remain > 0 {
 				return nil
 			} else {
-				debug.V(DebugDebug).Printf("%s sleep 1 second, %d second(s) remains!\n", w.getName(), remain*-1)
+				DebugV(DebugDebug).Printf("%s sleep 1 second, %d second(s) remains!\n", w.getName(), remain*-1)
 				time.Sleep(time.Second)
 			}
 		} else {

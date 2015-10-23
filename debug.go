@@ -12,6 +12,10 @@ func Debug() Debugger {
 	return debug
 }
 
+func DebugV(v Debugger) Debugger {
+	return debug.V(v)
+}
+
 func SetDebug(d Debugger) {
 	if d < DebugNull || d > DebugDebug {
 		panic("illegal debug value")
