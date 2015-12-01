@@ -1,4 +1,4 @@
-package beigui
+package util
 
 import (
 	"bytes"

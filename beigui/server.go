@@ -2,11 +2,12 @@ package beigui
 
 import (
 	"fmt"
+	"github.com/Jiajun-Fan/nandu/util"
 	"net/http"
 )
 
 var g_q *Q = nil
-var g_log *Log = nil
+var g_log *util.Log = nil
 
 func push(w http.ResponseWriter, r *http.Request) {
 	if g_q == nil || g_log == nil {
@@ -34,7 +35,7 @@ func status(w http.ResponseWriter, r *http.Request) {
 
 func Forever() {
 	g_q = MakeQ()
-	g_log = MakeLog(5)
+	g_log = util.MakeLog(200)
 	http.HandleFunc("/push", push)
 	http.HandleFunc("/pop", pop)
 	http.HandleFunc("/status", status)
