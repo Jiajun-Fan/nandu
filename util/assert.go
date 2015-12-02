@@ -7,13 +7,13 @@ type Error struct {
 	msg   string
 }
 
-func AssertNil(e error) {
+func AssertErr(e error) {
 	if e != nil {
 		panic(Error{false, e.Error()})
 	}
 }
 
-func AssertTrue(t string, b bool) {
+func Assert(b bool, t string) {
 	if !b {
 		panic(Error{false, t})
 	}

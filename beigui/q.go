@@ -2,6 +2,7 @@ package beigui
 
 import (
 	"container/list"
+	"github.com/Jiajun-Fan/nandu/common"
 	"sync"
 )
 
@@ -12,19 +13,19 @@ type Q struct {
 	lock       sync.Mutex
 }
 
-func (q *Q) Push(data Task) {
+func (q *Q) Push(data *common.Task) {
 	q.lock.Lock()
 	q.cnt_total += 1
 	q.list.PushBack(data)
 	q.lock.Unlock()
 }
 
-func (q *Q) Pop() Task {
+func (q *Q) Pop(w *common.Worker) *common.Task {
 	q.lock.Lock()
 	q.cnt_issued += 1
 	data := q.list.Remove(q.list.Front())
 	q.lock.Unlock()
-	task, _ := data.(Task)
+	task, _ := data.(*common.Task)
 	return task
 }
 
