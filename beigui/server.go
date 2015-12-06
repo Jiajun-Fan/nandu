@@ -3,7 +3,6 @@ package beigui
 import (
 	"github.com/Jiajun-Fan/nandu/common"
 	"github.com/Jiajun-Fan/nandu/util"
-	"github.com/ungerik/go-dry"
 	"net/http"
 )
 
@@ -23,25 +22,25 @@ func push(w http.ResponseWriter, r *http.Request) {
 	err := util.HttpRequestUnmarshalJSON(task, r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		dry.HTTPRespondText(err.Error(), w, r)
+		util.HttpRespondText(err.Error(), w)
 		return
 	}
 
 	if task.Project == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		dry.HTTPRespondText("missing project name", w, r)
+		util.HttpRespondText("missing project name", w)
 		return
 	}
 
 	if task.TaskSet == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		dry.HTTPRespondText("missing taskset name", w, r)
+		util.HttpRespondText("missing taskset name", w)
 		return
 	}
 
 	if task.Url == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		dry.HTTPRespondText("missing taskset name", w, r)
+		util.HttpRespondText("missing url", w)
 		return
 	}
 
@@ -49,7 +48,7 @@ func push(w http.ResponseWriter, r *http.Request) {
 
 	g_log.Write(task.PushLog())
 
-	dry.HTTPRespondMarshalJSON(&common.PushResponse{"OK", "task pushed"}, w, r)
+	util.HttpRespondMarshalJSON(&common.CommonResponse{common.ResponseOK, task}, w)
 }
 
 func pop(w http.ResponseWriter, r *http.Request) {
@@ -60,33 +59,34 @@ func pop(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		dry.HTTPRespondText(err.Error(), w, r)
+		util.HttpRespondText(err.Error(), w)
 		return
 	}
 
 	if worker.Project == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		dry.HTTPRespondText("missing project name", w, r)
+		util.HttpRespondText("missing project name", w)
 		return
 	}
 
+	code := common.ResponseOK
 	task := g_q.Pop(worker)
-	if task == nil {
-		return
+
+	if task != nil {
+		code = common.ResponseNoTask
+		g_log.Write(task.PopLog())
 	}
 
-	dry.HTTPRespondMarshalJSON(task, w, r)
-
-	g_log.Write(task.PopLog())
+	util.HttpRespondMarshalJSON(&common.CommonResponse{code, task}, w)
 }
 
 func status(w http.ResponseWriter, r *http.Request) {
 	check_init()
-	var l common.LogResponse
+	/*var l common.LogResponse
 	l.Issued = g_q.Issued()
 	l.Total = g_q.Total()
-	l.Logs = g_log.Read()
-	dry.HTTPRespondText(l.Logs, w, r)
+	l.Logs = g_log.Read()*/
+	util.HttpRespondText(g_log.Read(), w)
 }
 
 func start_webservice() {

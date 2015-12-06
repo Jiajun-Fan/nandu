@@ -22,10 +22,13 @@ func (q *Q) Push(data *common.Task) {
 
 func (q *Q) Pop(w *common.Worker) *common.Task {
 	q.lock.Lock()
-	q.cnt_issued += 1
-	data := q.list.Remove(q.list.Front())
+	var task *common.Task = nil
+	if q.list.Len() > 0 {
+		q.cnt_issued += 1
+		data := q.list.Remove(q.list.Front())
+		task, _ = data.(*common.Task)
+	}
 	q.lock.Unlock()
-	task, _ := data.(*common.Task)
 	return task
 }
 
