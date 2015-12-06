@@ -3,7 +3,7 @@ package beigui
 import (
 	"github.com/Jiajun-Fan/nandu/common"
 	"github.com/Jiajun-Fan/nandu/util"
-	"github.com/emicklei/go-restful"
+	"github.com/ungerik/go-dry"
 	"net/http"
 )
 
@@ -16,31 +16,32 @@ func check_init() {
 	}
 }
 
-func badrequest(msg string, r *restful.Response) {
-	r.WriteErrorString(http.StatusBadRequest, msg)
-}
-
-func push(q *restful.Request, r *restful.Response) {
+func push(w http.ResponseWriter, r *http.Request) {
 	check_init()
 
 	task := new(common.Task)
-	err := q.ReadEntity(task)
+	err := util.HttpRequestUnmarshalJSON(task, r)
 	if err != nil {
-		badrequest(err.Error(), r)
+		w.WriteHeader(http.StatusBadRequest)
+		dry.HTTPRespondText(err.Error(), w, r)
 		return
 	}
 
 	if task.Project == "" {
-		badrequest("missing project name", r)
+		w.WriteHeader(http.StatusBadRequest)
+		dry.HTTPRespondText("missing project name", w, r)
 		return
 	}
 
 	if task.TaskSet == "" {
-		badrequest("missing taskset name", r)
+		w.WriteHeader(http.StatusBadRequest)
+		dry.HTTPRespondText("missing taskset name", w, r)
 		return
 	}
+
 	if task.Url == "" {
-		badrequest("missing taskset name", r)
+		w.WriteHeader(http.StatusBadRequest)
+		dry.HTTPRespondText("missing taskset name", w, r)
 		return
 	}
 
@@ -48,55 +49,55 @@ func push(q *restful.Request, r *restful.Response) {
 
 	g_log.Write(task.PushLog())
 
-	r.WriteEntity(&common.PushResponse{"OK", "task pushed"})
+	dry.HTTPRespondMarshalJSON(&common.PushResponse{"OK", "task pushed"}, w, r)
 }
 
-func pop(q *restful.Request, r *restful.Response) {
+func pop(w http.ResponseWriter, r *http.Request) {
 	check_init()
 
 	worker := new(common.Worker)
-	err := q.ReadEntity(worker)
+	err := util.HttpRequestUnmarshalJSON(worker, r)
 
 	if err != nil {
-		badrequest(err.Error(), r)
+		w.WriteHeader(http.StatusBadRequest)
+		dry.HTTPRespondText(err.Error(), w, r)
 		return
 	}
 
 	if worker.Project == "" {
-		badrequest("missing project name", r)
+		w.WriteHeader(http.StatusBadRequest)
+		dry.HTTPRespondText("missing project name", w, r)
 		return
 	}
 
 	task := g_q.Pop(worker)
 	if task == nil {
+		return
 	}
 
-	r.WriteEntity(task)
+	dry.HTTPRespondMarshalJSON(task, w, r)
 
 	g_log.Write(task.PopLog())
 }
 
-func status(q *restful.Request, r *restful.Response) {
+func status(w http.ResponseWriter, r *http.Request) {
 	check_init()
 	var l common.LogResponse
 	l.Issued = g_q.Issued()
 	l.Total = g_q.Total()
 	l.Logs = g_log.Read()
-	r.WriteEntity(&l)
+	dry.HTTPRespondText(l.Logs, w, r)
 }
 
-func init_webservice() {
-	ws := new(restful.WebService)
-	ws.Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
-	ws.Route(ws.PUT("/push").To(push))
-	ws.Route(ws.POST("/pop").To(pop))
-	ws.Route(ws.GET("/status").To(status))
-	restful.Add(ws)
+func start_webservice() {
+	http.HandleFunc("/push", push)
+	http.HandleFunc("/pop", pop)
+	http.HandleFunc("/status", status)
+	http.ListenAndServe(":8080", nil)
 }
 
 func Forever() {
 	g_q = MakeQ()
 	g_log = util.MakeLog(200)
-	init_webservice()
-	http.ListenAndServe(":8080", nil)
+	start_webservice()
 }
