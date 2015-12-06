@@ -9,6 +9,8 @@ import (
 var g_q *Q = nil
 var g_log *util.Log = nil
 
+const kServerConfigFile = "server.json"
+
 func check_init() {
 	if g_q == nil || g_log == nil {
 		panic("not initialized")
@@ -73,8 +75,9 @@ func pop(w http.ResponseWriter, r *http.Request) {
 	task := g_q.Pop(worker)
 
 	if task != nil {
-		code = common.ResponseNoTask
 		g_log.Write(task.PopLog())
+	} else {
+		code = common.ResponseNoTask
 	}
 
 	util.HttpRespondMarshalJSON(&common.CommonResponse{code, task}, w)
@@ -89,15 +92,19 @@ func status(w http.ResponseWriter, r *http.Request) {
 	util.HttpRespondText(g_log.Read(), w)
 }
 
-func start_webservice() {
+func start_webservice(s *common.ServerInfo) {
 	http.HandleFunc("/push", push)
 	http.HandleFunc("/pop", pop)
 	http.HandleFunc("/status", status)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(s.Address(), nil)
 }
 
 func Forever() {
 	g_q = MakeQ()
 	g_log = util.MakeLog(200)
-	start_webservice()
+	info, err := common.NewServerInfo(kServerConfigFile)
+	if err != nil {
+		util.Debug().Fatal("can't open config file %s\n", kServerConfigFile)
+	}
+	start_webservice(info)
 }

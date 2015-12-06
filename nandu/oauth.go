@@ -1,14 +1,14 @@
 package nandu
 
 import (
+	"errors"
 	"github.com/mrjones/oauth"
 	"net/http"
 )
 
-func NewOauth(json *JsonOauth) *http.Client {
+func NewOauth(json *JsonOauth) (*http.Client, error) {
 	if json.Token == "" || json.Secret == "" || json.AppKey == "" || json.AppSecret == "" {
-		Debug().Error("token can't be empty!\n")
-		return nil
+		return nil, errors.New("token can't be empty")
 	}
 	consumer := oauth.NewConsumer(
 		json.AppKey,
@@ -24,8 +24,7 @@ func NewOauth(json *JsonOauth) *http.Client {
 	client, err := consumer.MakeHttpClient(token)
 
 	if err != nil {
-		Debug().Error(err.Error())
-		return nil
+		return nil, err
 	}
-	return client
+	return client, nil
 }

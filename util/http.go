@@ -1,10 +1,12 @@
 package util
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 )
 
+// server side
 func HttpRequestUnmarshalJSON(v interface{}, req *http.Request) error {
 	decoder := json.NewDecoder(req.Body)
 	return decoder.Decode(v)
@@ -24,4 +26,18 @@ func HttpRespondText(s string, w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "text/plain")
 	_, err := w.Write([]byte(s))
 	return err
+}
+
+// client side
+func HttpPostJSON(url string, data interface{}) (*http.Response, error) {
+	b, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	return http.Post(url, "application/json", bytes.NewBuffer(b))
+}
+
+func HttpResponseUnmarshalJSON(v interface{}, req *http.Response) error {
+	decoder := json.NewDecoder(req.Body)
+	return decoder.Decode(v)
 }
