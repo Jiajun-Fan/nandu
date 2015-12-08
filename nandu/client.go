@@ -35,22 +35,30 @@ func (worker *Worker) Push(task *common.Task) (*common.Task, error) {
 		util.Debug().Error("failed to push task %v\n", err)
 		return nil, err
 	}
-	util.Debug().Info("%s\n", resp.Task)
+	util.Debug().Info(resp.Task.PushLog())
 	return resp.Task, err
 }
 
 func (worker *Worker) Pop() (*common.Task, error) {
 	resp, err := responseToJSON(util.HttpPostJSON(worker.info.AddrPop(), &common.Worker{"cool"}))
 	if err != nil {
-		util.Debug().Error("failed to push task %v\n", err)
+		util.Debug().Error("failed to push task reason %v\n", err)
 		return nil, err
 	}
-	util.Debug().Info("%s\n", resp.Task)
+	if resp.Task != nil {
+		util.Debug().Info(resp.Task.PopLog())
+	}
 	return resp.Task, err
 }
 
 func (worker *Worker) Run() {
 	util.Debug().Info("'%s' started\n", worker.name)
+
+	/*for {
+		task, err := worker.Pop()
+		if task == nil {
+		}
+	}*/
 
 	util.Debug().Info("'%s' exit\n", worker.name)
 }
