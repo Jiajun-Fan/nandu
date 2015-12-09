@@ -6,22 +6,22 @@ import (
 	"net/http"
 )
 
-func NewOauth(json *JsonOauth) (*http.Client, error) {
-	if json.Token == "" || json.Secret == "" || json.AppKey == "" || json.AppSecret == "" {
+func NewOauth(appKey string, appSecret string, token string, secret string) (*http.Client, error) {
+	if token == "" || secret == "" || appKey == "" || appSecret == "" {
 		return nil, errors.New("token can't be empty")
 	}
 	consumer := oauth.NewConsumer(
-		json.AppKey,
-		json.AppSecret,
+		appKey,
+		appSecret,
 		oauth.ServiceProvider{
 			"", "", "", "",
 		})
 
-	token := new(oauth.AccessToken)
-	token.Token = json.Token
-	token.Secret = json.Secret
+	t := new(oauth.AccessToken)
+	t.Token = token
+	t.Secret = secret
 
-	client, err := consumer.MakeHttpClient(token)
+	client, err := consumer.MakeHttpClient(t)
 
 	if err != nil {
 		return nil, err

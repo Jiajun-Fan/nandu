@@ -74,3 +74,7 @@ func NewWorker(name string) *Worker {
 	worker.info = info
 	return worker
 }
+
+type Client interface {
+	Run(task *common.Task)
+}
