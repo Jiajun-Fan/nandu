@@ -3,6 +3,8 @@ package util
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -37,7 +39,10 @@ func HttpPostJSON(url string, data interface{}) (*http.Response, error) {
 	return http.Post(url, "application/json", bytes.NewBuffer(b))
 }
 
-func HttpResponseUnmarshalJSON(v interface{}, req *http.Response) error {
+func HttpResponseUnmarshalJSON(v interface{}, req *http.Response, status int) error {
+	if status != 0 && status != req.StatusCode {
+		return errors.New(fmt.Sprintf("get status code %d", req.StatusCode))
+	}
 	decoder := json.NewDecoder(req.Body)
 	return decoder.Decode(v)
 }

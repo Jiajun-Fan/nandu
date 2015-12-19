@@ -4,7 +4,4 @@ import (
 	"github.com/Jiajun-Fan/nandu/common"
 )
 
-type Client interface {
-	Run(task *common.Task)
-	Name() string
-}
+type ParserHandler func(task *common.Task, bytes []byte) error

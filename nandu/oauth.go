@@ -1,14 +1,15 @@
 package nandu
 
 import (
-	"errors"
+	"github.com/Jiajun-Fan/nandu/util"
 	"github.com/mrjones/oauth"
 	"net/http"
 )
 
-func NewOauth(appKey string, appSecret string, token string, secret string) (*http.Client, error) {
+func NewOauth(appKey string, appSecret string, token string, secret string) *http.Client {
 	if token == "" || secret == "" || appKey == "" || appSecret == "" {
-		return nil, errors.New("token can't be empty")
+		util.Debug().Error("token can't be empty\n")
+		return nil
 	}
 	consumer := oauth.NewConsumer(
 		appKey,
@@ -24,7 +25,8 @@ func NewOauth(appKey string, appSecret string, token string, secret string) (*ht
 	client, err := consumer.MakeHttpClient(t)
 
 	if err != nil {
-		return nil, err
+		util.Debug().Error("%+v")
+		return nil
 	}
-	return client, nil
+	return client
 }
