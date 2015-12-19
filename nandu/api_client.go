@@ -1,6 +1,7 @@
 package nandu
 
 import (
+	"github.com/Jiajun-Fan/nandu/common"
 	"github.com/Jiajun-Fan/nandu/util"
 	"net/http"
 )
@@ -20,5 +21,5 @@ func NewApiClient(appKey string, appSecret string, token string, secret string) 
 	return client
 }
 
-func (ApiClient *c) Run(task *common.Task) {
+func (c *ApiClient) Run(task *common.Task) {
 }
