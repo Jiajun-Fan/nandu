@@ -4,4 +4,4 @@ import (
 	"github.com/Jiajun-Fan/nandu/common"
 )
 
-type ParserHandler func(task *common.Task, bytes []byte) error
+type ParserHandler func(worker *Worker, task *common.Task, bytes []byte)

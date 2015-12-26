@@ -1,4 +1,4 @@
-package beigui
+package main
 
 import (
 	"container/list"

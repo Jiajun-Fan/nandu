@@ -1,4 +1,4 @@
-package beigui
+package main
 
 import (
 	"github.com/Jiajun-Fan/nandu/common"
@@ -85,10 +85,6 @@ func pop(w http.ResponseWriter, r *http.Request) {
 
 func status(w http.ResponseWriter, r *http.Request) {
 	check_init()
-	/*var l common.LogResponse
-	l.Issued = g_q.Issued()
-	l.Total = g_q.Total()
-	l.Logs = g_log.Read()*/
 	util.HttpRespondText(g_log.Read(), w)
 }
 

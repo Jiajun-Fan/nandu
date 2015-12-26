@@ -36,7 +36,7 @@ func (worker *Worker) Push(task *common.Task) *common.Task {
 		return nil
 	} else {
 		if resp.Task != nil {
-			util.Debug().Info(resp.Task.PushLog())
+			util.Debug().Debug(resp.Task.PushLog())
 		}
 	}
 	return resp.Task
@@ -57,7 +57,7 @@ func (worker *Worker) Pop() *common.Task {
 		return nil
 	} else {
 		if resp.Task != nil {
-			util.Debug().Info(resp.Task.PopLog())
+			util.Debug().Debug(resp.Task.PopLog())
 		}
 	}
 
@@ -110,11 +110,7 @@ func (worker *Worker) Parse(task *common.Task, bytes []byte) {
 		return
 	}
 
-	err := parser(task, bytes)
-
-	if err != nil {
-		util.Debug().Error("%s", err.Error())
-	}
+	parser(worker, task, bytes)
 }
 
 func (worker *Worker) Fetch(task *common.Task) []byte {
@@ -125,7 +121,7 @@ func (worker *Worker) Fetch(task *common.Task) []byte {
 
 	r, err := client.Get(task.Url)
 	if err != nil {
-		util.Debug().Error("can't fetch url %s\n", task.Url)
+		util.Debug().Error("can't fetch url %s, %s\n", task.Url, err.Error())
 		return nil
 	}
 
@@ -134,12 +130,12 @@ func (worker *Worker) Fetch(task *common.Task) []byte {
 	bytes, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
-		util.Debug().Error("can't get bytes from url %s\n")
+		util.Debug().Error("can't get bytes from url %s, %s\n", task.Url, err.Error())
 		return nil
 	}
 
 	if r.StatusCode/100 != 2 {
-		util.Debug().Error("get status code %d\n", r.StatusCode)
+		util.Debug().Error("get wrong status code url %d, %d\n", task.Url, r.StatusCode)
 		return nil
 	}
 
