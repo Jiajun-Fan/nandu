@@ -25,7 +25,7 @@ func NewOauth(appKey string, appSecret string, token string, secret string) *htt
 	client, err := consumer.MakeHttpClient(t)
 
 	if err != nil {
-		util.Debug().Error("%+v")
+		util.Debug().Error("%s\n", err.Error())
 		return nil
 	}
 	return client
