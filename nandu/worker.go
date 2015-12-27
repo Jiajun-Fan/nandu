@@ -28,6 +28,7 @@ type Worker struct {
 }
 
 func (worker *Worker) Push(task *common.Task) *common.Task {
+	task.Token = worker.info.Server.Token
 	r, err := util.HttpPostJSON(worker.info.Server.AddrPush(), task)
 	if err != nil {
 		util.Debug().Error("failed to push task, %s\n", err.Error())
@@ -49,7 +50,7 @@ func (worker *Worker) Push(task *common.Task) *common.Task {
 }
 
 func (worker *Worker) Pop() *common.Task {
-	r, err := util.HttpPostJSON(worker.info.Server.AddrPop(), &common.Worker{worker.project})
+	r, err := util.HttpPostJSON(worker.info.Server.AddrPop(), &common.Worker{worker.info.Server.Token, worker.project})
 	if err != nil {
 		util.Debug().Error("failed to pop task, %s\n", err.Error())
 		return nil

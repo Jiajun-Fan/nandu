@@ -7,8 +7,9 @@ import (
 )
 
 type ServerInfo struct {
-	Addr string `json:"addr"`
-	Port uint   `json:"port"`
+	Addr  string `json:"addr"`
+	Port  uint   `json:"port"`
+	Token string `json:"token"`
 }
 
 func (s *ServerInfo) Address() string {

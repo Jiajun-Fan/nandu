@@ -10,6 +10,7 @@ type Task struct {
 	Project string `json:"project"`
 	TaskSet string `json:"task_set"`
 	Url     string `json:"url"`
+	Token   string `json:"token"`
 	Data    struct {
 		Pint []int64  `json:"pint"`
 		Pstr []string `json:"pstring"`

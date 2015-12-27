@@ -1,18 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"github.com/Jiajun-Fan/nandu/common"
 	"github.com/Jiajun-Fan/nandu/util"
 	"net/http"
 )
 
+var g_info *common.ServerInfo = nil
 var g_q *Q = nil
 var g_log *util.Log = nil
 
-const kServerConfigFile = "server.json"
+const kServerConfigFile = "beigui.json"
 
 func check_init() {
-	if g_q == nil || g_log == nil {
+	if g_q == nil || g_log == nil || g_info == nil {
 		panic("not initialized")
 	}
 }
@@ -22,6 +24,13 @@ func push(w http.ResponseWriter, r *http.Request) {
 
 	task := new(common.Task)
 	err := util.HttpRequestUnmarshalJSON(task, r)
+
+	if task.Token == "" || task.Token != g_info.Token {
+		w.WriteHeader(http.StatusBadRequest)
+		util.HttpRespondText("missing token", w)
+		return
+	}
+
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		util.HttpRespondText(err.Error(), w)
@@ -65,6 +74,12 @@ func pop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if worker.Token == "" || worker.Token != g_info.Token {
+		w.WriteHeader(http.StatusBadRequest)
+		util.HttpRespondText("missing token", w)
+		return
+	}
+
 	if worker.Project == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		util.HttpRespondText("missing project name", w)
@@ -85,14 +100,21 @@ func pop(w http.ResponseWriter, r *http.Request) {
 
 func status(w http.ResponseWriter, r *http.Request) {
 	check_init()
+	s := fmt.Sprintf("total: %d\nissued: %d\n", g_q.cnt_total, g_q.cnt_issued)
+	util.HttpRespondText(s, w)
+}
+
+func log(w http.ResponseWriter, r *http.Request) {
+	check_init()
 	util.HttpRespondText(g_log.Read(), w)
 }
 
-func start_webservice(s *common.ServerInfo) {
+func start_webservice() {
 	http.HandleFunc("/push", push)
 	http.HandleFunc("/pop", pop)
 	http.HandleFunc("/status", status)
-	http.ListenAndServe(s.Address(), nil)
+	http.HandleFunc("/log", log)
+	http.ListenAndServe(g_info.Address(), nil)
 }
 
 func Forever() {
@@ -102,5 +124,6 @@ func Forever() {
 	if err != nil {
 		util.Debug().Fatal("can't open config file %s\n", kServerConfigFile)
 	}
-	start_webservice(info)
+	g_info = info
+	start_webservice()
 }
