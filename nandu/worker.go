@@ -25,6 +25,14 @@ type Worker struct {
 	retry_max   uint
 	clients     map[string]*http.Client
 	tasksets    map[string]*TaskSet
+	database    Database
+}
+
+func (worker *Worker) GetDB() Database {
+	if worker.database == nil {
+		util.Debug().Fatal("no database availabel\n")
+	}
+	return worker.database
 }
 
 func (worker *Worker) Push(task *common.Task) *common.Task {
@@ -69,6 +77,17 @@ func (worker *Worker) Pop() *common.Task {
 	}
 
 	return resp.Task
+}
+
+func (worker *Worker) registerDatabase() {
+	if worker.info.Database.DbType == "" || worker.info.Database.ConnectStr == "" {
+		return
+	}
+	if database, err := NewDatabase(worker.info.Database.DbType, worker.info.Database.ConnectStr); err != nil {
+		util.Debug().Error("can't connect to database %s\n", err.Error())
+	} else {
+		worker.database = database
+	}
 }
 
 func (worker *Worker) registerClients() {
@@ -213,5 +232,6 @@ func NewWorker() *Worker {
 	worker.project = info.Project
 	worker.registerClients()
 	worker.registerTaskSets()
+	worker.registerDatabase()
 	return worker
 }

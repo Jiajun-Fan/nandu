@@ -7,7 +7,6 @@ import (
 )
 
 type DatabaseInfo struct {
-	Name       string `json:"name"`
 	DbType     string `json:"db_type"`
 	ConnectStr string `json:"connect_string"`
 }
@@ -21,15 +20,14 @@ type OauthInfo struct {
 }
 
 type TaskSetInfo struct {
-	Name     string `json:"name"`
-	Database string `json:"database"`
-	Client   string `json:"client"`
+	Name   string `json:"name"`
+	Client string `json:"client"`
 }
 
 type NanduInfo struct {
 	Project   string            `json:"project"`
 	Server    common.ServerInfo `json:"server"`
-	Databases []DatabaseInfo    `json:"databases"`
+	Database  DatabaseInfo      `json:"database"`
 	Oauths    []OauthInfo       `json:"oauths"`
 	TaskSets  []TaskSetInfo     `json:"tasksets"`
 	InitTasks []common.Task     `json:"init_tasks"`
