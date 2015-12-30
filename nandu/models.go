@@ -8,7 +8,7 @@ type PageInterval struct {
 	Size   int64  `sql:"-"`
 	Offset int64  `sql:"-"`
 	Type   string `sql:"not null,unique"`
-	Name   string `sql:"not null"`
+	Name   string `sql:"not null" json:"name"`
 	Min    int64  `sql:"not null"`
 	Max    int64  `sql:"not null"`
 }

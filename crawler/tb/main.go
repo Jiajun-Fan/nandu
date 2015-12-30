@@ -44,29 +44,6 @@ func genUrlFromInterval(pi *nandu.PageInterval) string {
 	return fmt.Sprintf("http://api.tumblr.com/v2/blog/%s.tumblr.com/posts?offset=%d", pi.Name, pi.Offset)
 }
 
-func genDataFromInterval(task *common.Task, pi *nandu.PageInterval) {
-	task.AppendStrData(pi.Name)
-	task.AppendIntData(pi.Max)
-	task.AppendIntData(pi.Min)
-	task.AppendIntData(pi.Offset)
-	task.AppendIntData(pi.Size)
-	task.AppendIntData(pi.Cnt)
-}
-
-func getInterval(task *common.Task) *nandu.PageInterval {
-	name, err1 := task.GetStrData(0)
-	max, err2 := task.GetIntData(0)
-	min, err3 := task.GetIntData(1)
-	offset, err4 := task.GetIntData(2)
-	size, err5 := task.GetIntData(3)
-	cnt, err6 := task.GetIntData(4)
-	if err1 != nil || err2 != nil || err3 != nil || err4 != nil || err5 != nil || err6 != nil {
-		return nil
-	}
-
-	return nandu.NewPageInterval(task.TaskSet, name, max, min, offset, size, cnt)
-}
-
 func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 	resp := new(TumblrResponse)
 	err := json.Unmarshal(bytes, resp)
@@ -75,11 +52,9 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 		return
 	}
 
-	pi := getInterval(task)
-	if pi == nil {
-		util.Debug().Error("task data err %v %v\n", task.Data.Pstr, task.Data.Pint)
-		return
-	}
+	task.FillData(nandu.PageInterval{})
+
+	pi := task.Data.(nandu.PageInterval)
 
 	util.Debug().Info("fetching %s\n", task.Url)
 
@@ -95,8 +70,9 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 			dtask.TaskSet = kDownloadTaskSetName
 			dtask.Url = url
 			if fn, err := getFileName(url); err == nil {
-				dtask.AppendStrData(fn)
-				util.Debug().Info("yield %s (%d | %d)\n", url, resp.Data.Blog.Posts, pi.Min)
+				dtask.Data = nandu.DownloadData{FileName: fn}
+
+				util.Debug().Info("yield %s %s (%d | %d)\n", url, fn, resp.Data.Blog.Posts, pi.Min)
 				worker.Push(dtask)
 			}
 		}
@@ -106,8 +82,8 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 		new_task.Project = task.Project
 		new_task.TaskSet = task.TaskSet
 		pi.Offset = int64(resp.Data.Blog.Posts) - pi.Min + 1
-		genDataFromInterval(new_task, pi)
-		new_task.Url = genUrlFromInterval(pi)
+		new_task.Data = pi
+		new_task.Url = genUrlFromInterval(&pi)
 		worker.Push(new_task)
 	}
 }

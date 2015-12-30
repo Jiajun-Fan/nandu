@@ -7,9 +7,16 @@ import (
 	"os"
 )
 
+type DownloadData struct {
+	FileName string `json:"filename"`
+}
+
 func DownloadParser(worker *Worker, task *common.Task, bytes []byte) {
-	filename, err := task.GetStrData(0)
-	if err != nil || filename == "" {
+
+	task.FillData(DownloadData{})
+	filename := task.Data.(DownloadData).FileName
+
+	if filename == "" {
 		util.Debug().Error("no file name specified\n")
 		return
 	}

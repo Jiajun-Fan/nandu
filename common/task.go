@@ -1,42 +1,59 @@
 package common
 
 import (
-	"errors"
 	"fmt"
+	"reflect"
 )
 
 type Task struct {
-	Id      uint64 `json:"id"`
-	Project string `json:"project"`
-	TaskSet string `json:"task_set"`
-	Url     string `json:"url"`
-	Token   string `json:"token"`
-	Data    struct {
-		Pint []int64  `json:"pint"`
-		Pstr []string `json:"pstring"`
-	} `json:"data"`
+	Id      uint64      `json:"id"`
+	Project string      `json:"project"`
+	TaskSet string      `json:"task_set"`
+	Url     string      `json:"url"`
+	Token   string      `json:"token"`
+	Data    interface{} `json:"data"`
 }
 
-func (t *Task) AppendStrData(d string) {
-	t.Data.Pstr = append(t.Data.Pstr, d)
-}
+func (task *Task) FillData(data interface{}) {
 
-func (t *Task) GetStrData(i int) (string, error) {
-	if len(t.Data.Pstr) <= i {
-		return "", errors.New("string data index overflow")
+	data_type := reflect.TypeOf(data)    // type of data
+	data_value := reflect.New(data_type) // value of ptr to data
+	data_elem := data_value.Elem()       // value of data
+	field_num := data_type.NumField()
+
+	data_map, ok := task.Data.(map[string]interface{})
+	if !ok {
+		task.Data = data_elem.Interface()
+		return
 	}
-	return t.Data.Pstr[i], nil
-}
 
-func (t *Task) AppendIntData(i int64) {
-	t.Data.Pint = append(t.Data.Pint, i)
-}
-
-func (t *Task) GetIntData(i int) (int64, error) {
-	if len(t.Data.Pint) <= i {
-		return 0, errors.New("int data index overflow")
+	for i := 0; i < field_num; i++ {
+		field_struct := data_type.Field(i)
+		field_name := field_struct.Name
+		if json_tag_name := field_struct.Tag.Get("json"); json_tag_name != "" {
+			field_name = json_tag_name
+		}
+		if v, ok := data_map[field_name]; ok {
+			field_value := data_elem.Field(i)
+			if field_value.CanSet() == false {
+				continue
+			}
+			if value, ok := v.(string); ok && field_struct.Type.Kind() == reflect.String {
+				field_value.SetString(value)
+			}
+			if value, ok := v.(float64); ok {
+				v_kind := field_struct.Type.Kind()
+				if reflect.Int <= v_kind && v_kind <= reflect.Int64 {
+					field_value.SetInt(int64(value))
+				} else if reflect.Uint <= v_kind && v_kind <= reflect.Uint64 {
+					field_value.SetUint(uint64(value))
+				} else if reflect.Float32 == v_kind && v_kind == reflect.Float64 {
+					field_value.SetFloat(value)
+				}
+			}
+		}
 	}
-	return t.Data.Pint[i], nil
+	task.Data = data_elem.Interface()
 }
 
 func (t *Task) PushLog() string {
