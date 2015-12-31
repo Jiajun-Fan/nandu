@@ -1,8 +1,8 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
-	"reflect"
 )
 
 type Task struct {
@@ -14,7 +14,12 @@ type Task struct {
 	Data    interface{} `json:"data"`
 }
 
-func (task *Task) FillData(data interface{}) {
+func (task *Task) GetData(data interface{}) {
+	bytes, _ := json.Marshal(task.Data)
+	json.Unmarshal(bytes, data)
+}
+
+/*func (task *Task) FillData(data interface{}) {
 
 	data_type := reflect.TypeOf(data)    // type of data
 	data_value := reflect.New(data_type) // value of ptr to data
@@ -54,7 +59,7 @@ func (task *Task) FillData(data interface{}) {
 		}
 	}
 	task.Data = data_elem.Interface()
-}
+}*/
 
 func (t *Task) PushLog() string {
 	return fmt.Sprintf("[ PUSH ]: project: %s, task_set: %s, url: %s, data: %+v\n", t.Project, t.TaskSet, t.Url, t.Data)

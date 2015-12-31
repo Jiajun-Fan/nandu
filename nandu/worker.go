@@ -171,7 +171,7 @@ func (worker *Worker) pushInitTasks() {
 
 func (worker *Worker) initDatabaseModels() {
 	if worker.info.Database.Init && worker.database != nil {
-		if worker.models.Len() > 0 {
+		for worker.models.Len() > 0 {
 			data := worker.models.Remove(worker.models.Front())
 			worker.database.CreateTable(data)
 		}
@@ -181,6 +181,7 @@ func (worker *Worker) initDatabaseModels() {
 func (worker *Worker) Run() {
 	worker.checkParsers()
 	worker.pushInitTasks()
+	worker.initDatabaseModels()
 
 	util.Debug().Info("'%s' started\n", worker.project)
 
@@ -232,7 +233,7 @@ func (worker *Worker) Fetch(task *common.Task) []byte {
 	}
 
 	if r.StatusCode/100 != 2 {
-		util.Debug().Error("get wrong status code url %d, %d\n", task.Url, r.StatusCode)
+		util.Debug().Error("get wrong status code url %s, %d\n", task.Url, r.StatusCode)
 		return nil
 	}
 

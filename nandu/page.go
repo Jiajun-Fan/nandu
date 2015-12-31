@@ -1,10 +1,8 @@
 package nandu
 
-import (
-	"github.com/jinzhu/gorm"
-)
+import ()
 
-type PageInterval struct {
+type TaskPageData struct {
 	ID     uint   `gorm:"primary_key"`
 	Cnt    int64  `sql:"-" json:"cnt"`
 	Offset int64  `sql:"-" json:"offset"`
@@ -14,11 +12,11 @@ type PageInterval struct {
 	Max    int64  `sql:"not null" json:"max"`
 }
 
-func (p *PageInterval) hasCurrent() bool {
+func (p *TaskPageData) hasCurrent() bool {
 	return p.Max != 0
 }
 
-func (p *PageInterval) updateCurrent(begin int64, end int64) {
+func (p *TaskPageData) updateCurrent(begin int64, end int64) {
 	if begin == 0 || end == 0 {
 		panic("update with 0")
 	}
@@ -31,14 +29,13 @@ func (p *PageInterval) updateCurrent(begin int64, end int64) {
 	p.Cnt += 1
 }
 
-func (p *PageInterval) Update(total int64, offset int64, length int64, db *gorm.DB) (int64, int64) {
+func (p *TaskPageData) Update(begin int64, end int64) (int64, int64) {
 
-	if length == 0 {
+	if begin == end {
 		return 0, 0
 	}
 
-	begin := total - offset
-	end := total - offset - length + 1
+	length := begin - end
 
 	if !p.hasCurrent() {
 		p.updateCurrent(begin, end)

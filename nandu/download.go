@@ -13,8 +13,9 @@ type DownloadData struct {
 
 func DownloadParser(worker *Worker, task *common.Task, bytes []byte) {
 
-	task.FillData(DownloadData{})
-	filename := task.Data.(DownloadData).FileName
+	d := DownloadData{}
+	task.GetData(&d)
+	filename := d.FileName
 
 	if filename == "" {
 		util.Debug().Error("no file name specified\n")
