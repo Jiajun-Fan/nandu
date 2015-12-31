@@ -9,6 +9,7 @@ import (
 type DatabaseInfo struct {
 	DbType     string `json:"db_type"`
 	ConnectStr string `json:"connect_string"`
+	Init       bool   `json:"init"`
 }
 
 type OauthInfo struct {

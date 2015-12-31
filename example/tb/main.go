@@ -55,14 +55,12 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 	task.FillData(nandu.PageInterval{})
 
 	pi := task.Data.(nandu.PageInterval)
-
+	pi.Type = task.TaskSet
 	util.Debug().Info("fetching %s\n", task.Url)
 
-	offset := pi.Offset
+	begin, end := pi.Update(int64(resp.Data.Blog.Posts), pi.Offset, int64(len(resp.Data.Posts)), worker.GetDB())
 
-	for i := range resp.Data.Posts {
-		pi.Update(int64(resp.Data.Blog.Posts), offset+int64(i), nil)
-		//pi.Update(int64(resp.Data.Blog.Posts), offset+int64(i), worker.GetDB())
+	for i := begin; i < end; i++ {
 		for j := range resp.Data.Posts[i].Photos {
 			url := resp.Data.Posts[i].Photos[j].Orig.Url
 			dtask := new(common.Task)
@@ -71,8 +69,7 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 			dtask.Url = url
 			if fn, err := getFileName(url); err == nil {
 				dtask.Data = nandu.DownloadData{FileName: fn}
-
-				util.Debug().Info("yield %s %s (%d | %d)\n", url, fn, resp.Data.Blog.Posts, pi.Min)
+				util.Debug().Info("yield %s %s (%d | %d)\n", url, fn, resp.Data.Blog.Posts, int64(resp.Data.Blog.Posts)-pi.Offset-i)
 				worker.Push(dtask)
 			}
 		}
@@ -103,6 +100,7 @@ func main() {
 
 	worker.RegisterParser(kTumblrTaskSetName, TumblrParser)
 	worker.RegisterParser(kDownloadTaskSetName, nandu.DownloadParser)
+	worker.RegisterModel(&nandu.PageInterval{})
 
 	worker.Run()
 }

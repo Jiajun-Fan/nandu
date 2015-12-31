@@ -1,8 +1,13 @@
 package nandu
 
 import (
+	"container/list"
 	"github.com/Jiajun-Fan/nandu/common"
 	"github.com/Jiajun-Fan/nandu/util"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jinzhu/gorm"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -25,10 +30,11 @@ type Worker struct {
 	retry_max   uint
 	clients     map[string]*http.Client
 	tasksets    map[string]*TaskSet
-	database    Database
+	database    *gorm.DB
+	models      list.List
 }
 
-func (worker *Worker) GetDB() Database {
+func (worker *Worker) GetDB() *gorm.DB {
 	if worker.database == nil {
 		util.Debug().Fatal("no database availabel\n")
 	}
@@ -83,10 +89,10 @@ func (worker *Worker) registerDatabase() {
 	if worker.info.Database.DbType == "" || worker.info.Database.ConnectStr == "" {
 		return
 	}
-	if database, err := NewDatabase(worker.info.Database.DbType, worker.info.Database.ConnectStr); err != nil {
+	if database, err := gorm.Open(worker.info.Database.DbType, worker.info.Database.ConnectStr); err != nil {
 		util.Debug().Error("can't connect to database %s\n", err.Error())
 	} else {
-		worker.database = database
+		worker.database = &database
 	}
 }
 
@@ -132,6 +138,10 @@ func (worker *Worker) registerTaskSets() {
 	}
 }
 
+func (worker *Worker) RegisterModel(model interface{}) {
+	worker.models.PushBack(model)
+}
+
 func (worker *Worker) RegisterParser(name string, parser ParserHandler) {
 	if taskset, ok := worker.tasksets[name]; ok {
 		if taskset.parser == nil {
@@ -156,6 +166,15 @@ func (worker *Worker) pushInitTasks() {
 	for i := range worker.info.InitTasks {
 		task := &worker.info.InitTasks[i]
 		worker.Push(task)
+	}
+}
+
+func (worker *Worker) initDatabaseModels() {
+	if worker.info.Database.Init && worker.database != nil {
+		if worker.models.Len() > 0 {
+			data := worker.models.Remove(worker.models.Front())
+			worker.database.CreateTable(data)
+		}
 	}
 }
 
