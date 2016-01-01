@@ -32,12 +32,13 @@ func DownloadParser(worker *Worker, task *common.Task, bytes []byte) {
 	}
 
 	h := md5.New()
-	md5 := fmt.Sprintf("%x", h.Sum(bytes))
+	h.Write(bytes)
+	hash := fmt.Sprintf("%x", h.Sum(nil))
 
 	fileData := FileData{}
 	fileData.Host = worker.info.Host
 	fileData.FileName = filename
-	fileData.Hash = md5
+	fileData.Hash = hash
 
 	old_file := FileData{}
 	worker.GetDB().Where("hash = ?", fileData.Hash).First(&old_file)
