@@ -31,10 +31,6 @@ func (p *TaskPageData) updateCurrent(begin int64, end int64) {
 
 func (p *TaskPageData) Update(begin int64, end int64) (int64, int64) {
 
-	if begin == end {
-		return 0, 0
-	}
-
 	length := begin - end + 1
 
 	if !p.hasCurrent() {
