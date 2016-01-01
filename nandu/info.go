@@ -26,6 +26,7 @@ type TaskSetInfo struct {
 }
 
 type NanduInfo struct {
+	Host      string            `json:"host"`
 	Project   string            `json:"project"`
 	Server    common.ServerInfo `json:"server"`
 	Database  DatabaseInfo      `json:"database"`

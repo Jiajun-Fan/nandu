@@ -8,6 +8,7 @@ import (
 	"github.com/Jiajun-Fan/nandu/nandu"
 	"github.com/Jiajun-Fan/nandu/util"
 	"github.com/jinzhu/gorm"
+	"os"
 	"strings"
 )
 
@@ -133,7 +134,9 @@ func getFileName(url string) (string, error) {
 	if index == -1 {
 		return "", errors.New(fmt.Sprintf("can't find filename from url %s", url))
 	}
-	return url[index+1:], nil
+	pwd, _ := os.Getwd()
+	filename := fmt.Sprintf("%s/tumblr/%s", pwd, url[index+1:])
+	return filename, nil
 }
 
 func main() {
@@ -146,6 +149,7 @@ func main() {
 	worker.RegisterModel(&TumblrBlog{})
 	worker.RegisterModel(&TumblrPhoto{})
 	worker.RegisterModel(&TumblrPost{})
+	worker.RegisterModel(&nandu.FileData{})
 
 	worker.Run()
 }
