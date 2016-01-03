@@ -10,6 +10,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -19,7 +20,9 @@ const (
 
 type TaskTumblrData struct {
 	nandu.TaskPageData
-	Bid int64 `json:"bid"`
+	Bid      int64 `json:"bid"`
+	Download bool  `json:download"`
+	Sleep    int64 `json:"sleep"`
 }
 
 type TumblrBlog struct {
@@ -86,6 +89,10 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 	task.GetData(&d)
 	d.Type = task.TaskSet
 
+	if d.Sleep != 0 {
+		time.Sleep(time.Duration(d.Sleep) * time.Millisecond)
+	}
+
 	if d.Bid == 0 {
 		blog := getTumblrBlog(d.Name, worker.GetDB())
 		d.Bid = int64(blog.ID)
@@ -105,20 +112,22 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 		for j := range post.TumblrPhotos {
 			post.TumblrPhotos[j].Fill()
 			url := post.TumblrPhotos[j].Orig.Url
-			dtask := new(common.Task)
-			dtask.Project = task.Project
-			dtask.TaskSet = kDownloadTaskSetName
-			dtask.Url = url
 			if fn, err := getFileName(url); err == nil {
-				dtask.Data = nandu.DownloadData{FileName: fn}
 				util.Debug().Info("yield %s %s (%d | %d)\n", url, fn, resp.Data.Blog.Posts, begin-i)
-				worker.Push(dtask)
+				if d.Download {
+					dtask := new(common.Task)
+					dtask.Project = task.Project
+					dtask.TaskSet = kDownloadTaskSetName
+					dtask.Url = url
+					dtask.Data = nandu.DownloadData{FileName: fn}
+					worker.Push(dtask)
+				}
 			}
 		}
 		worker.GetDB().Create(&post)
 	}
 
-	if d.Min > 1 {
+	if d.HasMore() {
 		new_task := new(common.Task)
 		new_task.Project = task.Project
 		new_task.TaskSet = task.TaskSet

@@ -162,7 +162,7 @@ func (worker *Worker) checkParsers() {
 	}
 }
 
-func (worker *Worker) pushInitTasks() {
+func (worker *Worker) PushInitTasks() {
 	for i := range worker.info.InitTasks {
 		task := &worker.info.InitTasks[i]
 		worker.Push(task)
@@ -180,7 +180,7 @@ func (worker *Worker) initDatabaseModels() {
 
 func (worker *Worker) Run() {
 	worker.checkParsers()
-	worker.pushInitTasks()
+	worker.PushInitTasks()
 	worker.initDatabaseModels()
 
 	util.Debug().Info("'%s' started\n", worker.project)
@@ -188,6 +188,7 @@ func (worker *Worker) Run() {
 	for {
 		task := worker.Pop()
 		if task != nil {
+			worker.retry_count = 0
 			if _, ok := worker.tasksets[task.TaskSet]; !ok {
 				util.Debug().Error("can't find taskset %s\n", task.TaskSet)
 				continue
@@ -212,6 +213,10 @@ func (worker *Worker) Run() {
 func (worker *Worker) Parse(task *common.Task, bytes []byte) {
 	parser := worker.tasksets[task.TaskSet].parser
 	parser(worker, task, bytes)
+}
+
+func (worker *Worker) GetInfo() *NanduInfo {
+	return worker.info
 }
 
 func (worker *Worker) Fetch(task *common.Task) []byte {

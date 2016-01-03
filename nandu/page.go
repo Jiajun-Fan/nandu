@@ -6,10 +6,16 @@ type TaskPageData struct {
 	ID     uint   `gorm:"primary_key"`
 	Cnt    int64  `sql:"-" json:"cnt"`
 	Offset int64  `sql:"-" json:"offset"`
+	Stop   int64  `sql:"-" json:"stop"`
 	Type   string `sql:"not null,unique" json:"type"`
 	Name   string `sql:"not null" json:"name"`
 	Min    int64  `sql:"not null" json:"min"`
 	Max    int64  `sql:"not null" json:"max"`
+	nomore bool   `sql:"-"`
+}
+
+func (p *TaskPageData) HasMore() bool {
+	return !p.nomore || p.Min <= 1
 }
 
 func (p *TaskPageData) hasCurrent() bool {
@@ -30,6 +36,16 @@ func (p *TaskPageData) updateCurrent(begin int64, end int64) {
 }
 
 func (p *TaskPageData) Update(begin int64, end int64) (int64, int64) {
+
+	if begin <= p.Stop {
+		begin = p.Stop + 1
+		p.nomore = true
+	}
+
+	if end <= p.Stop {
+		end = p.Stop + 1
+		p.nomore = true
+	}
 
 	length := begin - end + 1
 
