@@ -15,7 +15,7 @@ type TaskPageData struct {
 }
 
 func (p *TaskPageData) HasMore() bool {
-	return !p.nomore || p.Min <= 1
+	return !p.nomore && p.Min > 1
 }
 
 func (p *TaskPageData) hasCurrent() bool {
@@ -38,12 +38,12 @@ func (p *TaskPageData) updateCurrent(begin int64, end int64) {
 func (p *TaskPageData) Update(begin int64, end int64) (int64, int64) {
 
 	if begin <= p.Stop {
-		begin = p.Stop + 1
+		p.Max = p.Stop + 1
 		p.nomore = true
 	}
 
 	if end <= p.Stop {
-		end = p.Stop + 1
+		p.Min = p.Stop + 1
 		p.nomore = true
 	}
 
