@@ -21,7 +21,7 @@ const (
 type TaskTumblrData struct {
 	nandu.TaskPageData
 	Bid      int64 `json:"bid"`
-	Download bool  `json:download"`
+	Download bool  `json:"download"`
 	Sleep    int64 `json:"sleep"`
 }
 
