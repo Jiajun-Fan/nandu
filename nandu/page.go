@@ -43,7 +43,7 @@ func (p *TaskPageData) Update(begin int64, end int64) (int64, int64) {
 	}
 
 	if end <= p.Stop {
-		begin = p.Stop + 1
+		end = p.Stop + 1
 		p.nomore = true
 	}
 
