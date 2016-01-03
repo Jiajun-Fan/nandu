@@ -38,12 +38,12 @@ func (p *TaskPageData) updateCurrent(begin int64, end int64) {
 func (p *TaskPageData) Update(begin int64, end int64) (int64, int64) {
 
 	if begin <= p.Stop {
-		p.Max = p.Stop + 1
+		begin = p.Stop + 1
 		p.nomore = true
 	}
 
 	if end <= p.Stop {
-		p.Min = p.Stop + 1
+		begin = p.Stop + 1
 		p.nomore = true
 	}
 
