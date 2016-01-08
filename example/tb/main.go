@@ -36,7 +36,6 @@ type TumblrPost struct {
 	ID           uint          `json:"-" gorm:"primary_key"`
 	TumblrBlogID uint          `json:"-"`
 	Offset       uint          `json:"-"`
-	Type         string        `json:"type" sql:"-"`
 	Title        string        `json:"source_title"`
 	TumblrPhotos []TumblrPhoto `json:"photos"`
 }
@@ -81,13 +80,12 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 	resp := new(TumblrResponse)
 	err := json.Unmarshal(bytes, resp)
 	if err != nil {
-		util.Debug().Error("failed to parse response\n")
+		util.Debug().Error("failed to parse response %s\n", err.Error())
 		return
 	}
 
 	d := TaskTumblrData{}
 	task.GetData(&d)
-	d.Type = task.TaskSet
 
 	if d.Sleep != 0 {
 		time.Sleep(time.Duration(d.Sleep) * time.Millisecond)
