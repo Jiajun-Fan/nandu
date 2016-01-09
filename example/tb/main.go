@@ -129,7 +129,7 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 		new_task := new(common.Task)
 		new_task.Project = task.Project
 		new_task.TaskSet = task.TaskSet
-		d.Offset = int64(resp.Data.Blog.Posts) - d.Min + 1
+		d.Offset = int64(resp.Data.Blog.Posts) - d.Current + 1
 		new_task.Data = d
 		new_task.Url = genUrlFromInterval(&d)
 		worker.Push(new_task)

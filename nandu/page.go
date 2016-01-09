@@ -6,10 +6,10 @@ type TaskPageData struct {
 	ID      uint   `gorm:"primary_key"`
 	Cnt     int64  `sql:"-" json:"cnt"`
 	Offset  int64  `sql:"-" json:"offset"`
-	Min     int64  `sql:"-" json:"stop"`
+	Min     int64  `sql:"-" json:"min"`
 	Type    string `sql:"not null,unique" json:"type"`
 	Name    string `sql:"not null" json:"name"`
-	Current int64  `sql:"not null" json:"min"`
+	Current int64  `sql:"not null" json:"current"`
 	nomore  bool   `sql:"-"`
 }
 
