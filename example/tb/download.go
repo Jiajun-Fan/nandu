@@ -124,7 +124,7 @@ func DownloadParser(worker *nandu.Worker, task *common.Task, bs []byte) {
 	hash := fmt.Sprintf("%x", h.Sum(nil))
 
 	if duplicate(worker.GetDB(), hash) {
-		//	return
+		return
 	}
 
 	iv, bs := encrypt(bs, gDownloadInfo.EncryptKey)
@@ -138,6 +138,6 @@ func DownloadParser(worker *nandu.Worker, task *common.Task, bs []byte) {
 		util.Debug().Error("can't create file %s\n", err.Error())
 	} else {
 		util.Debug().Info("downloading %s\n", task.Url)
-		//worker.GetDB().Create(&fileData)
+		worker.GetDB().Create(&fileData)
 	}
 }
