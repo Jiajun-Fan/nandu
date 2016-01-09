@@ -20,9 +20,8 @@ const (
 
 type TaskTumblrData struct {
 	nandu.TaskPageData
-	Bid      int64 `json:"bid"`
-	Download bool  `json:"download"`
-	Sleep    int64 `json:"sleep"`
+	Bid   int64 `json:"bid"`
+	Sleep int64 `json:"sleep"`
 }
 
 type TumblrBlog struct {
@@ -43,6 +42,7 @@ type TumblrPost struct {
 type TumblrPhoto struct {
 	ID           uint   `json:"-" gorm:"primary_key"`
 	TumblrPostID uint   `json:"-"`
+	FileDataID   uint   `json:"-"`
 	Url          string `json:"-"`
 	Width        int    `json:"-"`
 	Height       int    `json:"-"`
@@ -112,14 +112,6 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 			url := post.TumblrPhotos[j].Orig.Url
 			if fn, err := getFileName(url); err == nil {
 				util.Debug().Info("yield %s %s (%d | %d)\n", url, fn, resp.Data.Blog.Posts, begin-i)
-				if d.Download {
-					dtask := new(common.Task)
-					dtask.Project = task.Project
-					dtask.TaskSet = kDownloadTaskSetName
-					dtask.Url = url
-					dtask.Data = nandu.DownloadData{FileName: fn}
-					worker.Push(dtask)
-				}
 			}
 		}
 		worker.GetDB().Create(&post)

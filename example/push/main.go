@@ -14,11 +14,14 @@ const (
 	kDownloadTaskSetName = "tumblr_download"
 )
 
+type DownloadData struct {
+	Pid uint `json:"pid"`
+}
+
 type TaskTumblrData struct {
 	nandu.TaskPageData
-	Bid      int64 `json:"bid"`
-	Download bool  `json:"download"`
-	Sleep    int64 `json:"sleep"`
+	Bid   int64 `json:"bid"`
+	Sleep int64 `json:"sleep"`
 }
 
 type TaskFileDataRange struct {
@@ -29,6 +32,7 @@ type TaskFileDataRange struct {
 type TumblrPhoto struct {
 	ID           uint `json:"-" gorm:"primary_key"`
 	TumblrPostID uint
+	FileDataID   uint
 	Url          string
 	Width        int
 	Height       int
@@ -116,8 +120,12 @@ func main() {
 	if photos != nil {
 		for i := range photos {
 			task := common.Task{}
+			if photos[i].FileDataID != 0 {
+				continue
+			}
 			task.Url = photos[i].Url
 			task.TaskSet = kDownloadTaskSetName
+			task.Data = DownloadData{photos[i].ID}
 			util.Debug().Info("push %s\n", task.Url)
 			worker.Push(&task)
 		}

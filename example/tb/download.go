@@ -32,6 +32,10 @@ type DownloadInfo struct {
 	Bucket     *oss.Bucket `json:"-"`
 }
 
+type DownloadData struct {
+	Pid uint `json:"pid"`
+}
+
 func NewDownloadInfo(file string) (*DownloadInfo, error) {
 	bytes, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -103,10 +107,19 @@ func encrypt(bytes []byte, k string) ([]byte, []byte) {
 	return iv, buff
 }
 
-func duplicate(db *gorm.DB, hash string) bool {
+func duplicate(db *gorm.DB, hash string) (bool, uint) {
 	file := FileData{}
 	db.Where("hash = ?", hash).First(&file)
-	return !db.NewRecord(file)
+	return !db.NewRecord(file), file.ID
+}
+
+func setFileId(db *gorm.DB, pid uint, fid uint) {
+	photo := TumblrPhoto{}
+	db.Where("id = ?", pid).First(&photo)
+	if !db.NewRecord(photo) {
+		photo.FileDataID = fid
+		db.Save(&photo)
+	}
 }
 
 func DownloadParser(worker *nandu.Worker, task *common.Task, bs []byte) {
@@ -123,14 +136,18 @@ func DownloadParser(worker *nandu.Worker, task *common.Task, bs []byte) {
 	h.Write(bs)
 	hash := fmt.Sprintf("%x", h.Sum(nil))
 
-	if duplicate(worker.GetDB(), hash) {
+	data := DownloadData{}
+	task.GetData(&data)
+
+	if dup, fid := duplicate(worker.GetDB(), hash); dup {
+		setFileId(worker.GetDB(), data.Pid, fid)
 		return
 	}
 
 	iv, bs := encrypt(bs, gDownloadInfo.EncryptKey)
 
 	fileData := FileData{}
-	fileData.FileName = fmt.Sprintf("%x%s", iv[:4], hash)
+	fileData.FileName = fmt.Sprintf("%x%s", iv[:4], hash[:24])
 	fileData.Hash = hash
 
 	err := gDownloadInfo.Bucket.PutObject(fileData.FileName, bytes.NewReader(bs))
@@ -139,5 +156,6 @@ func DownloadParser(worker *nandu.Worker, task *common.Task, bs []byte) {
 	} else {
 		util.Debug().Info("downloading %s\n", task.Url)
 		worker.GetDB().Create(&fileData)
+		setFileId(worker.GetDB(), data.Pid, fileData.ID)
 	}
 }
