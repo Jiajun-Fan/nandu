@@ -24,14 +24,15 @@ type TaskSet struct {
 }
 
 type Worker struct {
-	info        *NanduInfo
-	project     string
-	retry_count uint
-	retry_max   uint
-	clients     map[string]*http.Client
-	tasksets    map[string]*TaskSet
-	database    *gorm.DB
-	models      list.List
+	info       *NanduInfo
+	project    string
+	retryCount uint
+	retryMax   uint
+	clients    map[string]*http.Client
+	tasksets   map[string]*TaskSet
+	database   *gorm.DB
+	models     list.List
+	localTask  list.List
 }
 
 func (worker *Worker) GetDB() *gorm.DB {
@@ -43,6 +44,7 @@ func (worker *Worker) GetDB() *gorm.DB {
 
 func (worker *Worker) Push(task *common.Task) *common.Task {
 	task.Token = worker.info.Server.Token
+	task.Project = worker.project
 	r, err := util.HttpPostJSON(worker.info.Server.AddrPush(), task)
 	if err != nil {
 		util.Debug().Error("failed to push task, %s\n", err.Error())
@@ -83,6 +85,17 @@ func (worker *Worker) Pop() *common.Task {
 	}
 
 	return resp.Task
+}
+
+func (worker *Worker) PushLocal(task *common.Task) {
+	worker.localTask.PushBack(task)
+}
+
+func (worker *Worker) PopLocal() *common.Task {
+	if worker.localTask.Len() == 0 {
+		return nil
+	}
+	return worker.localTask.Remove(worker.localTask.Front()).(*common.Task)
 }
 
 func (worker *Worker) registerDatabase() {
@@ -162,13 +175,6 @@ func (worker *Worker) checkParsers() {
 	}
 }
 
-func (worker *Worker) PushInitTasks() {
-	for i := range worker.info.InitTasks {
-		task := &worker.info.InitTasks[i]
-		worker.Push(task)
-	}
-}
-
 func (worker *Worker) initDatabaseModels() {
 	if worker.info.Database.Init && worker.database != nil {
 		for worker.models.Len() > 0 {
@@ -180,15 +186,17 @@ func (worker *Worker) initDatabaseModels() {
 
 func (worker *Worker) Run() {
 	worker.checkParsers()
-	worker.PushInitTasks()
 	worker.initDatabaseModels()
 
 	util.Debug().Info("'%s' started\n", worker.project)
 
 	for {
-		task := worker.Pop()
+		task := worker.PopLocal()
+		if task == nil {
+			task = worker.Pop()
+		}
 		if task != nil {
-			worker.retry_count = 0
+			worker.retryCount = 0
 			if _, ok := worker.tasksets[task.TaskSet]; !ok {
 				util.Debug().Error("can't find taskset %s\n", task.TaskSet)
 				continue
@@ -198,11 +206,11 @@ func (worker *Worker) Run() {
 				worker.Parse(task, data)
 			}
 		} else {
-			worker.retry_count += 1
-			if worker.retry_count >= worker.retry_max {
+			worker.retryCount += 1
+			if worker.retryCount >= worker.retryMax {
 				break
 			}
-			util.Debug().Info("sleep 1 second, ( %d | %d )\n", worker.retry_count, worker.retry_max)
+			util.Debug().Info("sleep 1 second, ( %d | %d )\n", worker.retryCount, worker.retryMax)
 			time.Sleep(time.Second)
 		}
 	}
@@ -247,8 +255,8 @@ func (worker *Worker) Fetch(task *common.Task) []byte {
 
 func NewWorker() *Worker {
 	worker := new(Worker)
-	worker.retry_count = 0
-	worker.retry_max = 10
+	worker.retryCount = 0
+	worker.retryMax = 10
 	info, err := NewNanduInfo(kNanduConfigFile)
 	if err != nil {
 		util.Debug().Fatal("failed to load config file %s\n", err.Error())

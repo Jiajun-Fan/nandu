@@ -1,9 +1,17 @@
 package main
 
 import (
+	"encoding/json"
+	"github.com/Jiajun-Fan/nandu/common"
 	"github.com/Jiajun-Fan/nandu/nandu"
 	"github.com/Jiajun-Fan/nandu/util"
 	"github.com/jinzhu/gorm"
+	"io/ioutil"
+)
+
+const (
+	kTaskPushInfoFile    = "tasks.json"
+	kDownloadTaskSetName = "tumblr_download"
 )
 
 type TaskTumblrData struct {
@@ -11,6 +19,38 @@ type TaskTumblrData struct {
 	Bid      int64 `json:"bid"`
 	Download bool  `json:"download"`
 	Sleep    int64 `json:"sleep"`
+}
+
+type TaskFileDataRange struct {
+	Start uint `json:"start"`
+	Stop  uint `json:"stop"`
+}
+
+type TumblrPhoto struct {
+	ID           uint `json:"-" gorm:"primary_key"`
+	TumblrPostID uint
+	Url          string
+	Width        int
+	Height       int
+}
+
+type TaskPushInfo struct {
+	Blogs         []common.Task     `json:"blogs"`
+	FileDataRange TaskFileDataRange `json:"file_data_range"`
+}
+
+func NewTaskPushInfo(file string) (*TaskPushInfo, error) {
+	bytes, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	info := new(TaskPushInfo)
+	err = json.Unmarshal(bytes, info)
+	if err != nil {
+		return nil, err
+	}
+	return info, err
 }
 
 type TumblrBlog struct {
@@ -42,18 +82,44 @@ func getStop(name string, db *gorm.DB) int64 {
 	return int64(post.Offset)
 }
 
+func getPhotos(start uint, stop uint, db *gorm.DB) []TumblrPhoto {
+	if start >= stop {
+		return nil
+	}
+	photos := make([]TumblrPhoto, 0, 0)
+	db.Where("id >= ? and id < ?", start, stop).Find(&photos)
+	return photos
+}
+
 func main() {
 	util.SetDebug(util.DebugInfo)
 
 	worker := nandu.NewWorker()
-	info := worker.GetInfo()
-	for i := range info.InitTasks {
-		task := &info.InitTasks[i]
+
+	info, err := NewTaskPushInfo(kTaskPushInfoFile)
+	if err != nil {
+		util.Debug().Fatal("%s\n", err.Error())
+	}
+
+	for i := range info.Blogs {
+		task := &info.Blogs[i]
 		d := TaskTumblrData{}
 		task.GetData(&d)
 
-		d.Stop = getStop(d.Name, worker.GetDB())
+		d.Min = getStop(d.Name, worker.GetDB())
 		task.Data = d
+		util.Debug().Info("%s", task.PushLog())
+		worker.Push(task)
 	}
-	worker.PushInitTasks()
+
+	photos := getPhotos(info.FileDataRange.Start, info.FileDataRange.Stop, worker.GetDB())
+	if photos != nil {
+		for i := range photos {
+			task := common.Task{}
+			task.Url = photos[i].Url
+			task.TaskSet = kDownloadTaskSetName
+			util.Debug().Info("push %s\n", task.Url)
+			worker.Push(&task)
+		}
+	}
 }

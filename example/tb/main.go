@@ -152,7 +152,7 @@ func main() {
 	worker := nandu.NewWorker()
 
 	worker.RegisterParser(kTumblrTaskSetName, TumblrParser)
-	worker.RegisterParser(kDownloadTaskSetName, nandu.DownloadParser)
+	worker.RegisterParser(kDownloadTaskSetName, DownloadParser)
 	worker.RegisterModel(&TumblrBlog{})
 	worker.RegisterModel(&TumblrPhoto{})
 	worker.RegisterModel(&TumblrPost{})

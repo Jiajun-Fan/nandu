@@ -26,13 +26,12 @@ type TaskSetInfo struct {
 }
 
 type NanduInfo struct {
-	Host      string            `json:"host"`
-	Project   string            `json:"project"`
-	Server    common.ServerInfo `json:"server"`
-	Database  DatabaseInfo      `json:"database"`
-	Oauths    []OauthInfo       `json:"oauths"`
-	TaskSets  []TaskSetInfo     `json:"tasksets"`
-	InitTasks []common.Task     `json:"init_tasks"`
+	Host     string            `json:"host"`
+	Project  string            `json:"project"`
+	Server   common.ServerInfo `json:"server"`
+	Database DatabaseInfo      `json:"database"`
+	Oauths   []OauthInfo       `json:"oauths"`
+	TaskSets []TaskSetInfo     `json:"tasksets"`
 }
 
 func NewNanduInfo(file string) (*NanduInfo, error) {
