@@ -8,7 +8,7 @@ import (
 
 func NewOauth(appKey string, appSecret string, token string, secret string) *http.Client {
 	if token == "" || secret == "" || appKey == "" || appSecret == "" {
-		util.Debug().Error("token can't be empty\n")
+		util.Error("token can't be empty\n")
 		return nil
 	}
 	consumer := oauth.NewConsumer(
@@ -25,7 +25,7 @@ func NewOauth(appKey string, appSecret string, token string, secret string) *htt
 	client, err := consumer.MakeHttpClient(t)
 
 	if err != nil {
-		util.Debug().Error("%s\n", err.Error())
+		util.Error("%s\n", err.Error())
 		return nil
 	}
 	return client

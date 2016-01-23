@@ -122,7 +122,7 @@ func Forever() {
 	g_log = util.MakeLog(200)
 	info, err := common.NewServerInfo(kServerConfigFile)
 	if err != nil {
-		util.Debug().Fatal("can't open config file %s\n", kServerConfigFile)
+		util.Fatal("can't open config file %s\n", kServerConfigFile)
 	}
 	g_info = info
 	start_webservice()

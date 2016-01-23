@@ -128,7 +128,7 @@ func DownloadParser(worker *nandu.Worker, task *common.Task, bs []byte) {
 		var err error
 		gDownloadInfo, err = NewDownloadInfo(kDownloadInfoFile)
 		if err != nil {
-			util.Debug().Fatal("%s\n", err.Error())
+			util.Fatal("%s\n", err.Error())
 		}
 	}
 
@@ -152,9 +152,9 @@ func DownloadParser(worker *nandu.Worker, task *common.Task, bs []byte) {
 
 	err := gDownloadInfo.Bucket.PutObject(fileData.FileName, bytes.NewReader(bs))
 	if err != nil {
-		util.Debug().Error("can't create file %s\n", err.Error())
+		util.Error("can't create file %s\n", err.Error())
 	} else {
-		util.Debug().Info("downloading %s\n", task.Url)
+		util.Info("downloading %s\n", task.Url)
 		worker.GetDB().Create(&fileData)
 		setFileId(worker.GetDB(), data.Pid, fileData.ID)
 	}

@@ -7,17 +7,13 @@ import (
 
 type Debugger int
 
-var debug Debugger = DebugNull
-
-func Debug() Debugger {
-	return debug
-}
+var gDebug Debugger = DebugNull
 
 func SetDebug(d Debugger) {
 	if d < DebugNull || d > DebugDebug {
 		panic("illegal debug value")
 	}
-	debug = d
+	gDebug = d
 }
 
 const (
@@ -54,33 +50,33 @@ func (d Debugger) Printf(fmts string, args ...interface{}) {
 	}
 }
 
-func (d Debugger) Fatal(fmts string, args ...interface{}) {
-	if d >= 0 {
-		d.V(DebugFatal).Printf(fmts, args...)
+func Fatal(fmts string, args ...interface{}) {
+	if gDebug >= 0 {
+		gDebug.V(DebugFatal).Printf(fmts, args...)
 	}
 	os.Exit(-1)
 }
 
-func (d Debugger) Error(fmts string, args ...interface{}) {
-	if d >= 0 {
-		d.V(DebugError).Printf(fmts, args...)
+func Error(fmts string, args ...interface{}) {
+	if gDebug >= 0 {
+		gDebug.V(DebugError).Printf(fmts, args...)
 	}
 }
 
-func (d Debugger) Warning(fmts string, args ...interface{}) {
-	if d >= 0 {
-		d.V(DebugWarning).Printf(fmts, args...)
+func Warning(fmts string, args ...interface{}) {
+	if gDebug >= 0 {
+		gDebug.V(DebugWarning).Printf(fmts, args...)
 	}
 }
 
-func (d Debugger) Info(fmts string, args ...interface{}) {
-	if d >= 0 {
-		d.V(DebugInfo).Printf(fmts, args...)
+func Info(fmts string, args ...interface{}) {
+	if gDebug >= 0 {
+		gDebug.Printf(fmts, args...)
 	}
 }
 
-func (d Debugger) Debug(fmts string, args ...interface{}) {
-	if d >= 0 {
-		d.V(DebugDebug).Printf(fmts, args...)
+func Debug(fmts string, args ...interface{}) {
+	if gDebug >= 0 {
+		gDebug.V(DebugDebug).Printf(fmts, args...)
 	}
 }

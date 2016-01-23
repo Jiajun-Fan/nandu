@@ -2,29 +2,29 @@ package util
 
 import ()
 
-type Error struct {
+type Exception struct {
 	fatal bool
 	msg   string
 }
 
 func AssertErr(e error) {
 	if e != nil {
-		panic(Error{false, e.Error()})
+		panic(Exception{false, e.Error()})
 	}
 }
 
 func Assert(b bool, t string) {
 	if !b {
-		panic(Error{false, t})
+		panic(Exception{false, t})
 	}
 }
 
 func Pass() {
 	e := recover()
 	if e != nil {
-		if err, ok := e.(Error); ok {
+		if err, ok := e.(Exception); ok {
 			if !err.fatal {
-				debug.Error(err.msg)
+				Error(err.msg)
 			}
 		} else {
 			panic(e)

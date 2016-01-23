@@ -102,7 +102,7 @@ func main() {
 
 	info, err := NewTaskPushInfo(kTaskPushInfoFile)
 	if err != nil {
-		util.Debug().Fatal("%s\n", err.Error())
+		util.Fatal("%s\n", err.Error())
 	}
 
 	for i := range info.Blogs {
@@ -112,7 +112,7 @@ func main() {
 
 		d.Min = getStop(d.Name, worker.GetDB())
 		task.Data = d
-		util.Debug().Info("%s", task.PushLog())
+		util.Info("%s", task.PushLog())
 		worker.Push(task)
 	}
 
@@ -126,7 +126,7 @@ func main() {
 			task.Url = photos[i].Url
 			task.TaskSet = kDownloadTaskSetName
 			task.Data = DownloadData{photos[i].ID}
-			util.Debug().Info("push %s\n", task.Url)
+			util.Info("push %s\n", task.Url)
 			worker.Push(&task)
 		}
 	}

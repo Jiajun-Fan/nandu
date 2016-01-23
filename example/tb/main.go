@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	kTumblrOauthName     = "tumblr_oauth"
 	kTumblrTaskSetName   = "tumblr_api"
 	kDownloadTaskSetName = "tumblr_download"
 )
@@ -80,7 +81,7 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 	resp := new(TumblrResponse)
 	err := json.Unmarshal(bytes, resp)
 	if err != nil {
-		util.Debug().Error("failed to parse response %s\n", err.Error())
+		util.Error("failed to parse response %s\n", err.Error())
 		return
 	}
 
@@ -96,7 +97,7 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 		d.Bid = int64(blog.ID)
 	}
 
-	util.Debug().Info("fetching %s\n", task.Url)
+	util.Info("fetching %s\n", task.Url)
 
 	begin := int64(resp.Data.Blog.Posts) - d.Offset
 	end := begin - int64(len(resp.Data.Posts)) + 1
@@ -111,7 +112,7 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 			post.TumblrPhotos[j].Fill()
 			url := post.TumblrPhotos[j].Orig.Url
 			if fn, err := getFileName(url); err == nil {
-				util.Debug().Info("yield %s %s (%d | %d)\n", url, fn, resp.Data.Blog.Posts, begin-i)
+				util.Info("yield %s %s (%d | %d)\n", url, fn, resp.Data.Blog.Posts, begin-i)
 			}
 		}
 		worker.GetDB().Create(&post)
@@ -143,12 +144,13 @@ func main() {
 
 	worker := nandu.NewWorker()
 
-	worker.RegisterParser(kTumblrTaskSetName, TumblrParser)
-	worker.RegisterParser(kDownloadTaskSetName, DownloadParser)
-	worker.RegisterModel(&TumblrBlog{})
-	worker.RegisterModel(&TumblrPhoto{})
-	worker.RegisterModel(&TumblrPost{})
-	worker.RegisterModel(&nandu.FileData{})
+	worker.TaskSet(kTumblrTaskSetName).Parser(TumblrParser).Client(kTumblrOauthName)
+	worker.TaskSet(kDownloadTaskSetName).Parser(DownloadParser)
+
+	worker.Model(&TumblrBlog{}).
+		Model(&TumblrPhoto{}).
+		Model(&TumblrPost{}).
+		Model(&FileData{})
 
 	worker.Run()
 }
