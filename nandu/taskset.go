@@ -2,20 +2,33 @@ package nandu
 
 import (
 	"github.com/Jiajun-Fan/nandu/common"
-	"github.com/Jiajun-Fan/nandu/util"
-	"io/ioutil"
+	"github.com/jinzhu/gorm"
 	"net/http"
+	"time"
 )
 
 type TaskSet struct {
-	Name   string
-	worker *Worker
-	client *http.Client
-	parser ParserHandler
+	Name     string
+	worker   *Worker
+	client   *http.Client
+	parser   ParserHandler
+	sleep    time.Duration
+	fetcher  FetcherHandler
+	database *gorm.DB
+}
+
+func (taskset *TaskSet) Sleep(d time.Duration) *TaskSet {
+	taskset.sleep = d
+	return taskset
 }
 
 func (taskset *TaskSet) Client(name string) *TaskSet {
 	taskset.client = taskset.worker.GetClient(name)
+	return taskset
+}
+
+func (taskset *TaskSet) Fetcher(f FetcherHandler) *TaskSet {
+	taskset.fetcher = f
 	return taskset
 }
 
@@ -24,30 +37,38 @@ func (taskset *TaskSet) Parser(p ParserHandler) *TaskSet {
 	return taskset
 }
 
-func (taskset *TaskSet) Fetch(task *common.Task) []byte {
-	r, err := taskset.client.Get(task.Url)
-	if err != nil {
-		util.Error("can't fetch url %s, %s\n", task.Url, err.Error())
-		return nil
+func (taskset *TaskSet) Database(name string) *TaskSet {
+	taskset.database = taskset.worker.GetDB(name)
+	return taskset
+}
+
+func (taskset *TaskSet) Wait() {
+	if taskset.sleep != 0 {
+		time.Sleep(time.Second * taskset.sleep)
 	}
-
-	defer r.Body.Close()
-
-	bytes, err := ioutil.ReadAll(r.Body)
-
-	if err != nil {
-		util.Error("can't get bytes from url %s, %s\n", task.Url, err.Error())
-		return nil
-	}
-
-	if r.StatusCode/100 != 2 {
-		util.Error("get wrong status code url %s, %d\n", task.Url, r.StatusCode)
-		return nil
-	}
-
-	return bytes
 }
 
 func (taskset *TaskSet) Parse(task *common.Task, bytes []byte) {
-	taskset.parser(taskset.worker, task, bytes)
+	taskset.parser(taskset, task, bytes)
+}
+
+func (taskset *TaskSet) Fetch(task *common.Task) []byte {
+	return taskset.fetcher(taskset, task)
+}
+
+func (taskset *TaskSet) GetDB() *gorm.DB {
+	return taskset.database
+}
+
+func (taskset *TaskSet) GetWorker() *Worker {
+	return taskset.worker
+}
+
+func NewTaskSet(name string, worker *Worker) *TaskSet {
+	taskset := new(TaskSet)
+	taskset.Name = name
+	taskset.worker = worker
+	taskset.client = &http.Client{}
+	taskset.fetcher = CommonFetcher
+	return taskset
 }

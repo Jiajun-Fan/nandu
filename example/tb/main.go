@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	kDatabaseName        = "nandu"
 	kTumblrOauthName     = "tumblr_oauth"
 	kTumblrTaskSetName   = "tumblr_api"
 	kDownloadTaskSetName = "tumblr_download"
@@ -77,7 +78,7 @@ func genUrlFromInterval(d *TaskTumblrData) string {
 	return fmt.Sprintf("http://api.tumblr.com/v2/blog/%s.tumblr.com/posts?offset=%d", d.Name, d.Offset)
 }
 
-func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
+func TumblrParser(taskset *nandu.TaskSet, task *common.Task, bytes []byte) {
 	resp := new(TumblrResponse)
 	err := json.Unmarshal(bytes, resp)
 	if err != nil {
@@ -93,7 +94,7 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 	}
 
 	if d.Bid == 0 {
-		blog := getTumblrBlog(d.Name, worker.GetDB())
+		blog := getTumblrBlog(d.Name, taskset.GetDB())
 		d.Bid = int64(blog.ID)
 	}
 
@@ -115,7 +116,7 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 				util.Info("yield %s %s (%d | %d)\n", url, fn, resp.Data.Blog.Posts, begin-i)
 			}
 		}
-		worker.GetDB().Create(&post)
+		taskset.GetDB().Create(&post)
 	}
 
 	if d.HasMore() {
@@ -125,7 +126,7 @@ func TumblrParser(worker *nandu.Worker, task *common.Task, bytes []byte) {
 		d.Offset = int64(resp.Data.Blog.Posts) - d.Current + 1
 		new_task.Data = d
 		new_task.Url = genUrlFromInterval(&d)
-		worker.Push(new_task)
+		taskset.GetWorker().Push(new_task)
 	}
 }
 
@@ -144,13 +145,13 @@ func main() {
 
 	worker := nandu.NewWorker()
 
-	worker.TaskSet(kTumblrTaskSetName).Parser(TumblrParser).Client(kTumblrOauthName)
-	worker.TaskSet(kDownloadTaskSetName).Parser(DownloadParser)
+	worker.TaskSet(kTumblrTaskSetName).Parser(TumblrParser).Client(kTumblrOauthName).Database(kDatabaseName)
+	worker.TaskSet(kDownloadTaskSetName).Parser(DownloadParser).Database(kDatabaseName)
 
-	worker.Model(&TumblrBlog{}).
-		Model(&TumblrPhoto{}).
-		Model(&TumblrPost{}).
-		Model(&FileData{})
+	worker.Model(kDatabaseName, &TumblrBlog{}).
+		Model(kDatabaseName, &TumblrPhoto{}).
+		Model(kDatabaseName, &TumblrPost{}).
+		Model(kDatabaseName, &FileData{})
 
 	worker.Run()
 }

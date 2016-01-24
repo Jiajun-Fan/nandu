@@ -122,7 +122,7 @@ func setFileId(db *gorm.DB, pid uint, fid uint) {
 	}
 }
 
-func DownloadParser(worker *nandu.Worker, task *common.Task, bs []byte) {
+func DownloadParser(taskset *nandu.TaskSet, task *common.Task, bs []byte) {
 
 	if gDownloadInfo == nil {
 		var err error
@@ -139,8 +139,8 @@ func DownloadParser(worker *nandu.Worker, task *common.Task, bs []byte) {
 	data := DownloadData{}
 	task.GetData(&data)
 
-	if dup, fid := duplicate(worker.GetDB(), hash); dup {
-		setFileId(worker.GetDB(), data.Pid, fid)
+	if dup, fid := duplicate(taskset.GetDB(), hash); dup {
+		setFileId(taskset.GetDB(), data.Pid, fid)
 		return
 	}
 
@@ -155,7 +155,7 @@ func DownloadParser(worker *nandu.Worker, task *common.Task, bs []byte) {
 		util.Error("can't create file %s\n", err.Error())
 	} else {
 		util.Info("downloading %s\n", task.Url)
-		worker.GetDB().Create(&fileData)
-		setFileId(worker.GetDB(), data.Pid, fileData.ID)
+		taskset.GetDB().Create(&fileData)
+		setFileId(taskset.GetDB(), data.Pid, fileData.ID)
 	}
 }

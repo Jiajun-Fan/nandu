@@ -71,7 +71,7 @@ func Warning(fmts string, args ...interface{}) {
 
 func Info(fmts string, args ...interface{}) {
 	if gDebug >= 0 {
-		gDebug.Printf(fmts, args...)
+		gDebug.V(DebugInfo).Printf(fmts, args...)
 	}
 }
 

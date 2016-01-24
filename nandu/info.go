@@ -7,6 +7,7 @@ import (
 )
 
 type DatabaseInfo struct {
+	Name       string `json:"name"`
 	DbType     string `json:"db_type"`
 	ConnectStr string `json:"connect_string"`
 	Init       bool   `json:"init"`
@@ -21,11 +22,11 @@ type OauthInfo struct {
 }
 
 type NanduInfo struct {
-	Host     string            `json:"host"`
-	Project  string            `json:"project"`
-	Server   common.ServerInfo `json:"server"`
-	Database DatabaseInfo      `json:"database"`
-	Oauths   []OauthInfo       `json:"oauths"`
+	Host      string            `json:"host"`
+	Project   string            `json:"project"`
+	Server    common.ServerInfo `json:"server"`
+	Databases []DatabaseInfo    `json:"databases"`
+	Oauths    []OauthInfo       `json:"oauths"`
 }
 
 func NewNanduInfo(file string) (*NanduInfo, error) {

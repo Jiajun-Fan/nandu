@@ -11,6 +11,7 @@ import (
 
 const (
 	kTaskPushInfoFile    = "tasks.json"
+	kDatabaseName        = "nandu"
 	kDownloadTaskSetName = "tumblr_download"
 )
 
@@ -110,13 +111,13 @@ func main() {
 		d := TaskTumblrData{}
 		task.GetData(&d)
 
-		d.Min = getStop(d.Name, worker.GetDB())
+		d.Min = getStop(d.Name, worker.GetDB(kDatabaseName))
 		task.Data = d
 		util.Info("%s", task.PushLog())
 		worker.Push(task)
 	}
 
-	photos := getPhotos(info.FileDataRange.Start, info.FileDataRange.Stop, worker.GetDB())
+	photos := getPhotos(info.FileDataRange.Start, info.FileDataRange.Stop, worker.GetDB(kDatabaseName))
 	if photos != nil {
 		for i := range photos {
 			task := common.Task{}

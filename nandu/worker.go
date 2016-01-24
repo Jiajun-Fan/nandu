@@ -4,10 +4,7 @@ import (
 	"container/list"
 	"github.com/Jiajun-Fan/nandu/common"
 	"github.com/Jiajun-Fan/nandu/util"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
-	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
 	"net/http"
 	"time"
 )
@@ -23,16 +20,16 @@ type Worker struct {
 	retryMax   uint
 	tasksets   map[string]*TaskSet
 	clients    map[string]*http.Client
-	database   *gorm.DB
-	models     list.List
+	databases  map[string]NanduDB
 	localTask  list.List
 }
 
-func (worker *Worker) GetDB() *gorm.DB {
-	if worker.database == nil {
-		util.Fatal("no database availabel\n")
+func (worker *Worker) GetDB(name string) *gorm.DB {
+	database, ok := worker.databases[name]
+	if !ok {
+		util.Fatal("can't find database")
 	}
-	return worker.database
+	return database.DB
 }
 
 func (worker *Worker) GetInfo() *NanduInfo {
@@ -104,13 +101,19 @@ func (worker *Worker) PopLocal() *common.Task {
 }
 
 func (worker *Worker) registerDatabase() {
-	if worker.info.Database.DbType == "" || worker.info.Database.ConnectStr == "" {
-		return
-	}
-	if database, err := gorm.Open(worker.info.Database.DbType, worker.info.Database.ConnectStr); err != nil {
-		util.Error("can't connect to database %s\n", err.Error())
-	} else {
-		worker.database = &database
+	worker.databases = make(map[string]NanduDB)
+	for i := range worker.info.Databases {
+		dinfo := worker.info.Databases[i]
+		database := NewDatabase(dinfo.DbType, dinfo.ConnectStr)
+		if database == nil {
+			continue
+		}
+
+		if _, ok := worker.databases[dinfo.Name]; !ok {
+			worker.databases[dinfo.Name] = NanduDB{database, dinfo.Init}
+		} else {
+			util.Warning("double register database %s\n", dinfo.Name)
+		}
 	}
 }
 
@@ -135,16 +138,19 @@ func (worker *Worker) TaskSet(name string) *TaskSet {
 	if worker.tasksets == nil {
 		worker.tasksets = make(map[string]*TaskSet)
 	}
-	taskset := new(TaskSet)
-	taskset.Name = name
-	taskset.worker = worker
-	taskset.client = &http.Client{}
+	taskset := NewTaskSet(name, worker)
 	worker.tasksets[name] = taskset
 	return taskset
 }
 
-func (worker *Worker) Model(model interface{}) *Worker {
-	worker.models.PushBack(model)
+func (worker *Worker) Model(name string, model interface{}) *Worker {
+	database, ok := worker.databases[name]
+	if !ok {
+		util.Fatal("can't find database %s\n", name)
+	}
+	if database.Init {
+		database.DB.CreateTable(model)
+	}
 	return worker
 }
 
@@ -156,17 +162,7 @@ func (worker *Worker) checkParsers() {
 	}
 }
 
-func (worker *Worker) checkModels() {
-	if worker.info.Database.Init && worker.database != nil {
-		for worker.models.Len() > 0 {
-			data := worker.models.Remove(worker.models.Front())
-			worker.database.CreateTable(data)
-		}
-	}
-}
-
 func (worker *Worker) validate() {
-	worker.checkModels()
 	worker.checkParsers()
 }
 
