@@ -1,9 +1,8 @@
 package nandu
 
 import (
-	"encoding/json"
 	"github.com/Jiajun-Fan/nandu/common"
-	"io/ioutil"
+	"github.com/Jiajun-Fan/nandu/util"
 )
 
 type DatabaseInfo struct {
@@ -30,13 +29,8 @@ type NanduInfo struct {
 }
 
 func NewNanduInfo(file string) (*NanduInfo, error) {
-	bytes, err := ioutil.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-
 	info := new(NanduInfo)
-	err = json.Unmarshal(bytes, info)
+	err := util.ReadJsonFile(file, info)
 	if err != nil {
 		return nil, err
 	}

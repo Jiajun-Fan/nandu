@@ -6,7 +6,6 @@ import (
 	"crypto/cipher"
 	"crypto/md5"
 	"crypto/rand"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Jiajun-Fan/nandu/common"
@@ -15,7 +14,6 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/jinzhu/gorm"
 	"io"
-	"io/ioutil"
 )
 
 const (
@@ -37,13 +35,8 @@ type DownloadData struct {
 }
 
 func NewDownloadInfo(file string) (*DownloadInfo, error) {
-	bytes, err := ioutil.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-
 	info := new(DownloadInfo)
-	err = json.Unmarshal(bytes, info)
+	err := util.ReadJsonFile(file, info)
 	if err != nil {
 		return nil, err
 	}

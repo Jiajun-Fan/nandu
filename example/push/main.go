@@ -1,12 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/Jiajun-Fan/nandu/common"
 	"github.com/Jiajun-Fan/nandu/nandu"
 	"github.com/Jiajun-Fan/nandu/util"
 	"github.com/jinzhu/gorm"
-	"io/ioutil"
 )
 
 const (
@@ -45,13 +43,8 @@ type TaskPushInfo struct {
 }
 
 func NewTaskPushInfo(file string) (*TaskPushInfo, error) {
-	bytes, err := ioutil.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-
 	info := new(TaskPushInfo)
-	err = json.Unmarshal(bytes, info)
+	err := util.ReadJsonFile(file, info)
 	if err != nil {
 		return nil, err
 	}
