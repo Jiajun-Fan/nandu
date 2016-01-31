@@ -107,11 +107,9 @@ func duplicate(db *gorm.DB, hash string) (bool, uint) {
 }
 
 func setFileId(db *gorm.DB, pid uint, fid uint) {
-	util.Error("%d\n", pid)
 	photo := TumblrPhoto{}
 	db.Where("id = ?", pid).First(&photo)
 	if !db.NewRecord(photo) {
-		util.Error("%d\n", pid)
 		photo.FileDataID = fid
 		db.Save(&photo)
 	}

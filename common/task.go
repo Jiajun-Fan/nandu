@@ -70,9 +70,9 @@ func (task *Task) SetData(data interface{}) error {
 }*/
 
 func (t *Task) PushLog() string {
-	return fmt.Sprintf("[ PUSH ]: project: %s, task_set: %s, url: %s, data: %+v\n", t.Project, t.TaskSet, t.Url, t.Data)
+	return fmt.Sprintf("[ PUSH ]: project: %s, task_set: %s, url: %s\n", t.Project, t.TaskSet, t.Url)
 }
 
 func (t *Task) PopLog() string {
-	return fmt.Sprintf("[ POP  ]: project: %s, task_set: %s, url: %s, data: %+v\n", t.Project, t.TaskSet, t.Url, t.Data)
+	return fmt.Sprintf("[ POP  ]: project: %s, task_set: %s, url: %s\n", t.Project, t.TaskSet, t.Url)
 }
