@@ -105,7 +105,7 @@ func main() {
 		task.GetData(&d)
 
 		d.Min = getStop(d.Name, worker.GetDB(kDatabaseName))
-		task.Data = d
+		task.SetData(d)
 		util.Info("%s", task.PushLog())
 		worker.Push(task)
 	}
@@ -119,7 +119,7 @@ func main() {
 			}
 			task.Url = photos[i].Url
 			task.TaskSet = kDownloadTaskSetName
-			task.Data = DownloadData{photos[i].ID}
+			task.SetData(DownloadData{photos[i].ID})
 			util.Info("push %s\n", task.Url)
 			worker.Push(&task)
 		}
