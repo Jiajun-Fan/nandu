@@ -1,22 +1,30 @@
 package common
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 )
 
 type Task struct {
-	Id      uint64      `json:"id"`
-	Project string      `json:"project"`
-	TaskSet string      `json:"task_set"`
-	Url     string      `json:"url"`
-	Token   string      `json:"token"`
-	Data    interface{} `json:"data"`
+	Id      uint64          `json:"id"`
+	Project string          `json:"project"`
+	TaskSet string          `json:"task_set"`
+	Url     string          `json:"url"`
+	Token   string          `json:"token"`
+	Data    json.RawMessage `json:"data"`
 }
 
-func (task *Task) GetData(data interface{}) {
-	bytes, _ := json.Marshal(task.Data)
-	json.Unmarshal(bytes, data)
+func (task *Task) GetData(data interface{}) error {
+	d := json.NewDecoder(bytes.NewBuffer(task.Data))
+	err := d.Decode(data)
+	return err
+}
+
+func (task *Task) SetData(data interface{}) error {
+	m, err := json.Marshal(data)
+	task.Data = m
+	return err
 }
 
 /*func (task *Task) FillData(data interface{}) {
