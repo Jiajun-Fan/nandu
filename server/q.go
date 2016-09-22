@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"container/list"
@@ -13,14 +13,14 @@ type Q struct {
 	lock       sync.Mutex
 }
 
-func (q *Q) Push(data *common.Task) {
+func (q *Q) push(data *common.Task) {
 	q.lock.Lock()
 	q.cnt_total += 1
 	q.list.PushBack(data)
 	q.lock.Unlock()
 }
 
-func (q *Q) Pop(w *common.Worker) *common.Task {
+func (q *Q) pop(w *common.Worker) *common.Task {
 	q.lock.Lock()
 	var task *common.Task = nil
 	if q.list.Len() > 0 {
@@ -32,15 +32,7 @@ func (q *Q) Pop(w *common.Worker) *common.Task {
 	return task
 }
 
-func (q *Q) Issued() uint64 {
-	return q.cnt_issued
-}
-
-func (q *Q) Total() uint64 {
-	return q.cnt_total
-}
-
-func MakeQ() *Q {
+func newQ() *Q {
 	q := new(Q)
 	q.cnt_issued = 0
 	q.cnt_total = 0

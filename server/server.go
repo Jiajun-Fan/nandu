@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -7,14 +7,11 @@ import (
 	"net/http"
 )
 
-var g_info *common.ServerInfo = nil
+var g_info *ServerInfo = nil
 var g_q *Q = nil
-var g_log *util.Log = nil
-
-const kServerConfigFile = "beigui.json"
 
 func check_init() {
-	if g_q == nil || g_log == nil || g_info == nil {
+	if g_q == nil || g_info == nil {
 		panic("not initialized")
 	}
 }
@@ -55,9 +52,7 @@ func push(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	g_q.Push(task)
-
-	g_log.Write(task.PushLog())
+	g_q.push(task)
 
 	util.HttpRespondMarshalJSON(&common.CommonResponse{common.ResponseOK, task}, w)
 }
@@ -87,11 +82,9 @@ func pop(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := common.ResponseOK
-	task := g_q.Pop(worker)
+	task := g_q.pop(worker)
 
-	if task != nil {
-		g_log.Write(task.PopLog())
-	} else {
+	if task == nil {
 		code = common.ResponseNoTask
 	}
 
@@ -104,25 +97,19 @@ func status(w http.ResponseWriter, r *http.Request) {
 	util.HttpRespondText(s, w)
 }
 
-func log(w http.ResponseWriter, r *http.Request) {
-	check_init()
-	util.HttpRespondText(g_log.Read(), w)
-}
-
 func start_webservice() {
 	http.HandleFunc("/push", push)
 	http.HandleFunc("/pop", pop)
 	http.HandleFunc("/status", status)
-	http.HandleFunc("/log", log)
-	http.ListenAndServe(g_info.Address(), nil)
+	http.ListenAndServe(g_info.address(), nil)
 }
 
 func Forever() {
-	g_q = MakeQ()
-	g_log = util.MakeLog(200)
-	info, err := common.NewServerInfo(kServerConfigFile)
+	g_q = newQ()
+	info, err := newServerInfo()
 	if err != nil {
-		util.Fatal("can't open config file %s\n", kServerConfigFile)
+		genServerInfoTemplate()
+		util.Fatal("can't open config file '%s', please fill the information in '%s.template', and rename it to '%s'\n", kServerConfigFile, kServerConfigFile, kServerConfigFile)
 	}
 	g_info = info
 	start_webservice()
