@@ -10,20 +10,16 @@ type MyTask struct {
 
 func TestQueueIsEmpty(t *testing.T) {
 	q := NewQ()
-	if _, err := q.Pop(); err != ErrorQueueEmpty {
-		t.Error("Expected ErrorQueueEmpty, got", err)
+	if err := q.RunOneTask(); err != ErrorQueueNoPendingTask {
+		t.Error("Expected ErrorQueueNoPendingTask, got", err)
 	}
 }
 
-func TestQueueSetTaskID(t *testing.T) {
+func TestQueueRunTask(t *testing.T) {
 	q := NewQ()
-	task := MyTask{TaskBase{0, "ok", kTaskNew}}
-	q.Push(&task)
-	if taskPopped, err := q.Pop(); err != nil {
+	task := MyTask{TaskBase{0, "ok"}}
+	q.AddTask(&task)
+	if err := q.RunOneTask(); err != nil {
 		t.Error(err.Error())
-	} else {
-		if id := taskPopped.GetID(); id != 1 {
-			t.Error("Expected task ID is 1, got", id)
-		}
 	}
 }

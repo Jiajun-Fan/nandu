@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	ErrorQueueEmpty error = errors.New("queue is empty")
+	ErrorQueueNoPendingTask = errors.New("there is no pending task in the queue")
 )
 
 type Q struct {
@@ -17,30 +17,36 @@ type Q struct {
 	lock      sync.Mutex
 }
 
-func (q *Q) Push(t Task) error {
+func (q *Q) AddTask(t Task) error {
 	q.lock.Lock()
 	q.cntTotal += 1
 	t.Init(q.cntTotal)
 	q.list.PushBack(t)
+	// TODO log new task
 	q.lock.Unlock()
 	return nil
 }
 
-func (q *Q) Pop() (Task, error) {
+func (q *Q) RunOneTask() error {
 	q.lock.Lock()
-
-	defer q.lock.Unlock()
 
 	if q.list.Len() > 0 {
 		data := q.list.Remove(q.list.Front())
 		if task, ok := data.(Task); ok {
 			q.cntIssued += 1
-			return task, nil
+			q.lock.Unlock()
+			if err := task.Run(); err == nil {
+				// TODO log success
+			} else {
+				// TODO log failed
+			}
+			return nil
 		} else {
 			panic("Unknown data type pushed into q")
 		}
 	}
-	return nil, ErrorQueueEmpty
+	q.lock.Unlock()
+	return ErrorQueueNoPendingTask
 }
 
 func NewQ() *Q {
