@@ -3,7 +3,7 @@ package core
 const (
 	kTaskNew = iota
 	kTaskQueued
-	kTaskIssued
+	kTaskRunning
 	kTaskSuccess
 	kTaskFailed
 )
@@ -27,7 +27,7 @@ type TaskBase struct {
 }
 
 func (task *TaskBase) Run() error {
-	task.status = kTaskIssued
+	task.status = kTaskRunning
 	return nil
 }
 
