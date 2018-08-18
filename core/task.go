@@ -1,17 +1,61 @@
 package core
 
+const (
+	kTaskNew = iota
+	kTaskQueued
+	kTaskIssued
+	kTaskSuccess
+	kTaskFailed
+)
+
 type Task interface {
+	Init(uint64)
 	Run() error
-	SetID(TaskID)
-	GetID() TaskID
+	Finish(bool)
+
+	GetID() uint64
+	Name() string
+	Status() int
+
+	Diag() string
 }
 
-type TaskID uint64
-
-func (task *TaskID) SetID(id TaskID) {
-	*task = id
+type TaskBase struct {
+	id     uint64
+	name   string
+	status int
 }
 
-func (task *TaskID) GetID() TaskID {
-	return *task
+func (task *TaskBase) Run() error {
+	task.status = kTaskIssued
+	return nil
+}
+
+func (task *TaskBase) Init(id uint64) {
+	task.id = id
+	task.status = kTaskQueued
+}
+
+func (task *TaskBase) Finish(success bool) {
+	if success {
+		task.status = kTaskSuccess
+	} else {
+		task.status = kTaskFailed
+	}
+}
+
+func (task *TaskBase) GetID() uint64 {
+	return task.id
+}
+
+func (task *TaskBase) Name() string {
+	return task.name
+}
+
+func (task *TaskBase) Status() int {
+	return task.status
+}
+
+func (task *TaskBase) Diag() string {
+	return ""
 }

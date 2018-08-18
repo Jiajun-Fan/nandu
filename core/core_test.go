@@ -5,11 +5,7 @@ import (
 )
 
 type MyTask struct {
-	TaskID
-}
-
-func (task MyTask) Run() error {
-	return nil
+	TaskBase
 }
 
 func TestQueueIsEmpty(t *testing.T) {
@@ -21,7 +17,7 @@ func TestQueueIsEmpty(t *testing.T) {
 
 func TestQueueSetTaskID(t *testing.T) {
 	q := NewQ()
-	task := MyTask{0}
+	task := MyTask{TaskBase{0, "ok", kTaskNew}}
 	q.Push(&task)
 	if taskPopped, err := q.Pop(); err != nil {
 		t.Error(err.Error())

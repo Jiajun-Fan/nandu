@@ -11,8 +11,8 @@ var (
 )
 
 type Q struct {
-	cntIssued TaskID
-	cntTotal  TaskID
+	cntIssued uint64
+	cntTotal  uint64
 	list      list.List
 	lock      sync.Mutex
 }
@@ -20,7 +20,7 @@ type Q struct {
 func (q *Q) Push(t Task) error {
 	q.lock.Lock()
 	q.cntTotal += 1
-	t.SetID(q.cntTotal)
+	t.Init(q.cntTotal)
 	q.list.PushBack(t)
 	q.lock.Unlock()
 	return nil
