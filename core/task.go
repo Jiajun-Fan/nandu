@@ -4,7 +4,7 @@ type Task interface {
 	Init(uint64)
 	Run() error
 
-	GetID() uint64
+	ID() uint64
 	Name() string
 
 	Diag() string
@@ -23,7 +23,7 @@ func (task *TaskBase) Init(id uint64) {
 	task.id = id
 }
 
-func (task *TaskBase) GetID() uint64 {
+func (task *TaskBase) ID() uint64 {
 	return task.id
 }
 

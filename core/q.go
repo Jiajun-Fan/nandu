@@ -3,6 +3,7 @@ package core
 import (
 	"container/list"
 	"errors"
+	"log"
 	"sync"
 )
 
@@ -22,6 +23,7 @@ func (q *Q) AddTask(t Task) error {
 	q.cntTotal += 1
 	t.Init(q.cntTotal)
 	q.list.PushBack(t)
+	log.Printf("%d NEW %s", t.ID(), t.Diag())
 	// TODO log new task
 	q.lock.Unlock()
 	return nil
@@ -36,9 +38,9 @@ func (q *Q) RunOneTask() error {
 			q.cntIssued += 1
 			q.lock.Unlock()
 			if err := task.Run(); err == nil {
-				// TODO log success
+				log.Printf("%d SUCCESS %s", task.ID(), task.Diag())
 			} else {
-				// TODO log failed
+				log.Printf("%d FAILED %s", task.ID(), task.Diag())
 			}
 			return nil
 		} else {
