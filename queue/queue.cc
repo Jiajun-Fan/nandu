@@ -1,19 +1,28 @@
 #include "queue.hh"
 
-void Queue::addTask(uint32_t ts, Task* task) {
+Queue::Queue() : _id(0) {
+    pthread_mutex_init(&_lock, NULL);
+}
+
+Queue::~Queue() {
+    pthread_mutex_destroy(&_lock);
+}
+
+void Queue::pushTask(uint32_t ts, Task* task) {
+    pthread_mutex_lock(&_lock);
     uint64_t key = ts << 32 + _id;
     _id++;
     _tasks[key] = std::unique_ptr<Task>(task);
+    pthread_mutex_unlock(&_lock);
 }
 
-int main() {
-    Task* t = new Task();
-    IntParam* i1 = new IntParam(1);
-    IntParam* i2 = new IntParam(2);
-    IntParam* i3 = new IntParam(3);
-    t->addParam(i1);
-    t->addParam(i2);
-    t->addParam(i3);
-    delete t;
-    return 0;
+std::unique_ptr<Task> Queue::popTask() {
+    pthread_mutex_lock(&_lock);
+    if (_tasks.size() == 0) {
+        return std::unique_ptr<Task>(new Task("sleep"));
+    } else {
+        auto ret = std::move(_tasks.begin()->second);
+        _tasks.erase(_tasks.begin());
+    }
+    pthread_mutex_unlock(&_lock);
 }

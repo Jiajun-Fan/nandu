@@ -1,10 +1,12 @@
 cmake_minimum_required (VERSION 3.7)
 project (queue)
 
-# build queue
-file (GLOB SRC "*.cc")
+file (GLOB SERVER_SRC "server/*.cc")
+file (GLOB COMMON_SRC "*.cc")
 
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-message (0 "${CMAKE_CXX_FLAGS}")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-psabi")
+include_directories (${CMAKE_CURRENT_SOURCE_DIR})
+set (LIB_OPENSSL /usr/lib/arm-linux-gnueabihf/libcrypto.a)
 
-add_executable (nandu_queue ${SRC})
+add_executable (nandu_server ${COMMON_SRC} ${SERVER_SRC})
+target_link_libraries(nandu_server ${LIB_OPENSSL})
