@@ -49,20 +49,22 @@ static void* handleConnection(void* args) {
     setupThread(conn);
 
     // run the handler
-    conn->server->runConnectionFunctor(conn);
+    conn->server->runConnectionHandler(conn);
 
     // free resource
     cleanUpThread(conn);
 }
 
-static void TimeoutFunctor(int sig, siginfo_t* info, void* uc) {
+static void TimeoutHandler(int sig, siginfo_t* info, void* uc) {
     Connection* conn = (Connection*)info->si_value.sival_ptr;
     cleanUpThread(conn);
     pthread_exit(NULL);
 }
 
-Server::Server(bool local, int port, ConnectionFunctor functor) : 
-    _local(local), _port(port), _nb_conn(10), _functor(functor) {
+Server::Server(bool local, int port, ConnectionHandler hd, void* args) : 
+    _local(local), _port(port), 
+    _nb_conn(10), _connection_hd(hd),
+    _server_args(args) {
     _sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     assert(_sock_fd > 0);
     pthread_mutex_init(&_lock, NULL);
@@ -87,8 +89,8 @@ void Server::addThreadToBeJoin(const pthread_t& tid) {
     pthread_mutex_unlock(&_lock);
 }
 
-void Server::runConnectionFunctor(Connection* conn) {
-    _functor(conn);
+void Server::runConnectionHandler(Connection* conn) {
+    _connection_hd(conn);
 }
 
 void Server::bind() {
@@ -126,7 +128,7 @@ void Server::setupSignalHandler() {
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
 
-    sa.sa_sigaction = TimeoutFunctor;
+    sa.sa_sigaction = TimeoutHandler;
     sa.sa_flags = SA_SIGINFO;
     sigaction(SIGALRM, &sa, NULL);
 }
@@ -142,6 +144,7 @@ void Server::run() {
         socklen_t len = 0;
         conn->fd = accept(_sock_fd, (struct sockaddr*) &(conn->client_addr), &len);
         conn->server = this;
+        conn->serverArgs = _server_args;
         pthread_t tid;
         pthread_create(&tid, NULL, handleConnection, conn);
     }

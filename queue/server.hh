@@ -13,17 +13,18 @@ struct Connection {
     Server* server;
     int fd;
     timer_t timerId;
+    void* serverArgs;
 };
 
-typedef void* (*ConnectionFunctor)(Connection*);
-typedef void (*SignalFunctor)(int, siginfo_t*);
+typedef void* (*ConnectionHandler)(Connection*);
+typedef void (*SignalHandler)(int, siginfo_t*);
 
 class Server {
 public:
-    Server(bool local, int port, ConnectionFunctor functor);
+    Server(bool local, int port, ConnectionHandler hd, void* _server_args);
     virtual ~Server();
     void run();
-    void runConnectionFunctor(Connection* conn);
+    void runConnectionHandler(Connection* conn);
     void addThreadToBeJoin(const pthread_t& tid);
 
 private:
@@ -38,5 +39,6 @@ private:
     int                         _nb_conn;
     pthread_mutex_t             _lock;
     std::vector<pthread_t>      _tids;
-    ConnectionFunctor           _functor;
+    ConnectionHandler           _connection_hd;
+    void*                       _server_args;
 };
