@@ -1,0 +1,8 @@
+#include "client.hh"
+
+Client::Client(const std::string& host, int port) :
+                _host(host), _port(port) {
+    _sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+    assert(_sock_fd > 0);
+
+}

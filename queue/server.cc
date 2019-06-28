@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <string.h>
+#include <atomic>
 #include <iostream>
 #include "queue.hh"
 #include "sign.hh"
@@ -17,11 +18,19 @@
 const int kTimeout = 10;
 
 static void cleanUpThread(Connection* conn) {
+    static std::atomic<bool> called(false);
+    if (called.load()) {
+        return;
+    }
+    called.store(true);
+
     timer_delete(conn->timerId);
     pthread_t tid = pthread_self();
     conn->server->addThreadToBeJoin(tid);
     close(conn->fd);
     delete conn;
+    called.store(false);
+    pthread_exit(NULL);
 }
 
 static void setupThread(Connection* conn) {
@@ -49,22 +58,22 @@ static void* handleConnection(void* args) {
     setupThread(conn);
 
     // run the handler
-    conn->server->runConnectionHandler(conn);
+    conn->server->handleConnection(conn);
 
     // free resource
     cleanUpThread(conn);
+
+    return 0;
 }
 
 static void TimeoutHandler(int sig, siginfo_t* info, void* uc) {
     Connection* conn = (Connection*)info->si_value.sival_ptr;
     cleanUpThread(conn);
-    pthread_exit(NULL);
 }
 
-Server::Server(bool local, int port, ConnectionHandler hd, void* args) : 
+Server::Server(bool local, int port) : 
     _local(local), _port(port), 
-    _nb_conn(10), _connection_hd(hd),
-    _server_args(args) {
+    _nb_conn(10) {
     _sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     assert(_sock_fd > 0);
     pthread_mutex_init(&_lock, NULL);
@@ -89,17 +98,13 @@ void Server::addThreadToBeJoin(const pthread_t& tid) {
     pthread_mutex_unlock(&_lock);
 }
 
-void Server::runConnectionHandler(Connection* conn) {
-    _connection_hd(conn);
-}
-
 void Server::bind() {
     struct sockaddr_in servAddr;
     memset(&servAddr, 0, sizeof(servAddr));
 
     servAddr.sin_family = AF_INET;
     if (_local) {
-        servAddr.sin_addr.s_addr = htonl(inet_addr("127.0.0.1"));
+        servAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     } else {
         servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
     }
@@ -144,9 +149,8 @@ void Server::run() {
         socklen_t len = 0;
         conn->fd = accept(_sock_fd, (struct sockaddr*) &(conn->client_addr), &len);
         conn->server = this;
-        conn->serverArgs = _server_args;
         pthread_t tid;
-        pthread_create(&tid, NULL, handleConnection, conn);
+        pthread_create(&tid, NULL, ::handleConnection, conn);
     }
 }
 

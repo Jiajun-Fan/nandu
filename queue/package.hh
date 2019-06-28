@@ -13,18 +13,16 @@ struct RawPackageHead {
     size_t size;
 };
 
-struct Package {
-    PackageReasonCode code;
-    std::vector<unsigned char> bytes;
-};
+typedef std::vector<unsigned char> Package;
 
 class PackageReaderWriter {
 public:
     explicit PackageReaderWriter(int fd);
     virtual ~PackageReaderWriter();
-    std::unique_ptr<Package> readPackage();
-    size_t writePackage();
+    PackageReasonCode readPackage(Package& package);
+    PackageReasonCode writePackage(Package& package);
 private:
     PackageReasonCode read(unsigned char* buff, size_t toRead);
+    PackageReasonCode write(unsigned char* buff, size_t toWrite);
     int                             _fd;
 };

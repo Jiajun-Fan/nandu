@@ -35,18 +35,59 @@ PackageReasonCode PackageReaderWriter::read(unsigned char* buff, size_t toRead) 
     return PKG_OK;
 }
 
-std::unique_ptr<Package> PackageReaderWriter::readPackage() {
-    std::unique_ptr<Package> ret = std::unique_ptr<Package>(new Package);
-    RawPackageHead head;
+PackageReasonCode PackageReaderWriter::readPackage(Package& package) {
 
-    ret->code = read((unsigned char*)&head, sizeof(head));
-    if (strncmp(head.magic, kPackageMagic, strlen(kPackageMagic))) {
-        ret->code = PKG_CORRUPTED;
-    } else if(head.size > kMaxPackageSize) {
-        ret->code = PKG_CORRUPTED;
-    } else {
-        ret->bytes.resize(head.size);
-        ret->code = read(ret->bytes.data(), head.size);
+    RawPackageHead head;
+    PackageReasonCode code = read((unsigned char*)&head, sizeof(head));
+
+    if (code != PKG_OK) {
+        return code;
     }
-    return ret;
+
+    if (strncmp(head.magic, kPackageMagic, strlen(kPackageMagic))) {
+        return PKG_CORRUPTED;
+    } else if(head.size > kMaxPackageSize) {
+        return PKG_CORRUPTED;
+    }
+
+    package.resize(head.size);
+    return read(package.data(), head.size);
+}
+
+PackageReasonCode PackageReaderWriter::write(unsigned char* buff, size_t toWrite) {
+    while (toWrite != 0) {
+        ssize_t nbWrite = ::write(_fd, buff, toWrite);
+        if (nbWrite < 0) {
+            switch (errno) {
+            case EAGAIN:
+            case EINTR:
+                continue;
+            default:
+                assert(0);
+            }
+        } else if (nbWrite == 0) {
+            return PKG_FD_CLOSED;
+        } else {
+            assert(toWrite >= nbWrite);
+            toWrite -= nbWrite;
+            buff += nbWrite;
+        }
+    }
+    return PKG_OK;
+}
+
+PackageReasonCode PackageReaderWriter::writePackage(Package& package) {
+    RawPackageHead head;
+    size_t size = package.size();
+
+    memcpy(head.magic, kPackageMagic, strlen(kPackageMagic));
+    memcpy(&head.size, &size, sizeof(size));
+
+    PackageReasonCode code = write((unsigned char*)&head, sizeof(head));
+
+    if (code != PKG_OK) {
+        return code;
+    }
+
+    return write(package.data(), head.size);
 }

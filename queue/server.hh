@@ -6,6 +6,9 @@
 #include <string>
 #include <vector>
 
+#define kRemoteServer (false)
+#define kLocalServer (true)
+
 class Server;
 
 struct Connection {
@@ -13,18 +16,16 @@ struct Connection {
     Server* server;
     int fd;
     timer_t timerId;
-    void* serverArgs;
 };
 
-typedef void* (*ConnectionHandler)(Connection*);
 typedef void (*SignalHandler)(int, siginfo_t*);
 
 class Server {
 public:
-    Server(bool local, int port, ConnectionHandler hd, void* _server_args);
+    Server(bool local, int port);
     virtual ~Server();
     void run();
-    void runConnectionHandler(Connection* conn);
+    virtual void handleConnection(Connection* conn) = 0;
     void addThreadToBeJoin(const pthread_t& tid);
 
 private:
@@ -39,6 +40,4 @@ private:
     int                         _nb_conn;
     pthread_mutex_t             _lock;
     std::vector<pthread_t>      _tids;
-    ConnectionHandler           _connection_hd;
-    void*                       _server_args;
 };
