@@ -78,8 +78,16 @@ bool NanduServer::waitForPushPop(int fd) {
     }
     if (op == ND_PUSH) {
         Info("Got push %s.\n", msg.c_str());
-    }else if (op == ND_POP) {
-        Info("Got pop %s.\n", msg.c_str());
+    } else if (op == ND_POP) {
+        std::unique_ptr<Task> task = popTask();
+        Package taskPkg;
+        TaskReasonCode tc = task->package(taskPkg);
+        if (tc == TSK_OK) {
+            code = NanduReaderWriter(fd).write(ND_PUSH, taskPkg);
+            if (code == PKG_OK) {
+                Info("Pop task %s.\n", task->getName().c_str());
+            }
+        }
     } else {
         Error("Got wrong opcode %d.\n", op);
         return false;

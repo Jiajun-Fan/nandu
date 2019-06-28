@@ -1,8 +1,27 @@
 #pragma once
-#include <memory>
 #include <stdint.h>
+#include <limits.h>
+#include <memory>
 #include <string>
 #include <list>
+#include "io.hh"
+
+#define kMaxTaskLength PATH_MAX
+#define kMaxParamNum PATH_MAX
+
+typedef enum {
+    TSK_OK = 0,
+    TSK_TOO_LONG,
+    TSK_TOOMANY_PARAMS,
+    TSK_BAD_CHAR,
+} TaskReasonCode;
+
+class Task;
+
+extern TaskReasonCode CreateTaskFromPackage(Package& package, Task& task);
+extern TaskReasonCode CreatePackageFromTask(Package& package, Task& task);
+
+#ifdef ParamTypes
 
 class Param {
 public:
@@ -58,12 +77,36 @@ private:
 
 class Task {
 public:
+    Task() : _name("") {}
     explicit Task(const std::string& name) : _name(name) {}
     virtual ~Task() {}
     void addParam(Param* param) {
         _params.push_back(std::unique_ptr<Param>(param));
     }
+    const std::string& getName() const { return _name; }
+    void setName(const std::string& name) { _name = name; }
 private:
     std::string                                     _name;
     std::list<std::unique_ptr<Param> >              _params;
 };
+
+#else
+
+// currently we are not sure if parameter type other than 
+// string is needed. So keep the old code
+class Task {
+public:
+    Task() : _name("") {}
+    explicit Task(const std::string& name) : _name(name) {}
+    virtual ~Task() {}
+    void addParam(const std::string& param) {
+        _params.push_back(param);
+    }
+    const std::string& getName() const { return _name; }
+    void setName(const std::string& name) { _name = name; }
+    TaskReasonCode package(Package& package);
+private:
+    std::string                                     _name;
+    std::list<std::string>                          _params;
+};
+#endif

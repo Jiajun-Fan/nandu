@@ -1,6 +1,7 @@
 #include "ND_client.hh"
 #include <string.h>
 #include "log.hh"
+#include "task.hh"
 
 bool NanduClient::waitForChallenge(int fd, std::string& token) {
     NanduOperation op;
@@ -53,7 +54,24 @@ void NanduClient::pop_(int fd, Package& package) {
         return;
     }
 
-    std::string fuck("");
     NanduOperation op = ND_POP;
-    PackageReasonCode code = NanduReaderWriter(fd).write(op, fuck);
+    PackageReasonCode code = NanduReaderWriter(fd).write(op, std::string(""));
+
+    if (code == PKG_OK) {
+        Package taskPkg;
+        PackageReasonCode code = NanduReaderWriter(fd).read(op, taskPkg);
+        if (code != PKG_OK) {
+            return;
+        }
+        if (op != ND_PUSH) {
+            Error("Got wrong opcode %d.\n", op);
+            return;
+        }
+        Task task;
+        TaskReasonCode tc = CreateTaskFromPackage(taskPkg, task);
+        if (tc != TSK_OK) {
+            return;
+        }
+        Info("Got task %s\n", task.getName().c_str());
+    }
 }

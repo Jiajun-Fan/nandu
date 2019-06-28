@@ -19,6 +19,7 @@ void Queue::pushTask(uint32_t ts, Task* task) {
 std::unique_ptr<Task> Queue::popTask() {
     pthread_mutex_lock(&_lock);
     if (_tasks.size() == 0) {
+        pthread_mutex_unlock(&_lock);
         return std::unique_ptr<Task>(new Task("sleep"));
     } else {
         auto ret = std::move(_tasks.begin()->second);
