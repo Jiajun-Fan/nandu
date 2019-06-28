@@ -1,9 +1,9 @@
-#include "sign.hh"
+#include "hasher.hh"
 #include <openssl/sha.h>
 #include <sstream>
 #include <iomanip>
 
-std::string Signer::sign(const void* buff, size_t size) {
+std::string Hasher::hash(const void* buff, size_t size) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX cipher;
     SHA256_Init(&cipher);

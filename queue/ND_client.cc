@@ -1,50 +1,59 @@
 #include "ND_client.hh"
 #include <string.h>
-#include "error.hh"
+#include "log.hh"
 
 bool NanduClient::waitForChallenge(int fd, std::string& token) {
-    Package package;
-    PackageReasonCode code = PackageReaderWriter(fd).readPackage(package);
+    NanduOperation op;
+    PackageReasonCode code = NanduReaderWriter(fd).read(op, token);
+
     if (code != PKG_OK) {
-        Error() << "Error when reading package " << code << "." << std::endl;
         return false;
     }
 
-    NanduOperation op = *(NanduOperation*)package.data();
-    if (op != OpChallenge) {
-        Error() << "Get wrong opcode" << op << "." << std::endl;
+    if (op != ND_CHALLENGE) {
+        Error("Got wrong opcode %d.\n", op);
         return false;
     }
 
-    package.push_back('\0');
-    token = std::string((const char*)package.data()+sizeof(op));
+    Info("Got token %s.\n", token.c_str());
 
-    Info() << "Got token " << token << "." << std::endl;
     return true;
 }
 
 bool NanduClient::sendHash(int fd, const std::string& token) {
-    NanduOperation op = OpHash;
-    Package package;
-    std::string hash = sign(token.c_str(), token.length());
-    package.resize(hash.length() + sizeof(op));
-    memcpy(package.data(), &op, sizeof(op));
-    memcpy(package.data()+sizeof(op), hash.c_str(), hash.length());
+    NanduOperation op = ND_HASH;
+    std::string hashStr = hash(token.c_str(), token.length());
 
-    PackageReasonCode code = PackageReaderWriter(fd).writePackage(package);
+    PackageReasonCode code = NanduReaderWriter(fd).write(op, hashStr);
     if (code != PKG_OK) {
-        Error() << "Error when reading package " << code << "." << std::endl;
         return false;
     }
-    Info() << "Hash send " << hash << "." << std::endl;
+    Info("Hash send %s.\n", hashStr.c_str());
     return true;
 }
 
-void NanduClient::handleConnection(int fd) {
+void NanduClient::push_(int fd, Package& package) {
     std::string token;
     if (!waitForChallenge(fd, token) ||
             !sendHash(fd, token)) {
-        Error() << "Failed to send request." << std::endl;
+        Error("Failed to auth.\n");
         return;
     }
+
+    std::string fuck("fuck");
+    NanduOperation op = ND_PUSH;
+    PackageReasonCode code = NanduReaderWriter(fd).write(op, fuck);
+}
+
+void NanduClient::pop_(int fd, Package& package) {
+    std::string token;
+    if (!waitForChallenge(fd, token) ||
+            !sendHash(fd, token)) {
+        Error("Failed to auth.\n");
+        return;
+    }
+
+    std::string fuck("");
+    NanduOperation op = ND_POP;
+    PackageReasonCode code = NanduReaderWriter(fd).write(op, fuck);
 }

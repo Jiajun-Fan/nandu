@@ -11,9 +11,7 @@
 #include <string.h>
 #include <atomic>
 #include <iostream>
-#include "queue.hh"
-#include "sign.hh"
-#include "error.hh"
+#include "log.hh"
 
 const int kTimeout = 10;
 
@@ -113,11 +111,11 @@ void Server::bind() {
     int ret = ::bind(_sock_fd, (const struct sockaddr*)&servAddr, sizeof(servAddr));
     if (ret != 0) {
         if (errno == EACCES) {
-            Error() << "The port :" << _port << " is protected.";
+            Fatal("The port :%d is protected.\n", _port);
         } else if (errno == EADDRINUSE) { 
-            Error() << "The port :" << _port << " is already used.";
+            Fatal("The port :%d is already used.\n", _port);
         } else {
-            Error() << "Failed to bind to address :" << _port;
+            Fatal("Failed to bind to address :%d.\n", _port);
         }
         exit(-1);
     }

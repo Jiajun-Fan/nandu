@@ -5,12 +5,13 @@
 #include <time.h>
 #include <string.h>
 #include <sstream>
-#include "error.hh"
+#include "log.hh"
+#include "ND_io.hh"
 
 
 NanduServer::NanduServer(bool local, int port, 
             const std::string& key) :
-            Signer(key), Server(local, port) {
+            Hasher(key), Server(local, port) {
 }
 
 NanduServer::~NanduServer() {
@@ -34,49 +35,64 @@ std::string NanduServer::generateToken() {
 }
 
 bool NanduServer::sendChallenge(int fd, const std::string& token) {
-    NanduOperation op = OpChallenge;
-    Package package;
-    package.resize(token.length() + sizeof(op));
-    memcpy(package.data(), &op, sizeof(op));
-    memcpy(package.data()+sizeof(op), token.c_str(), token.length());
 
-    PackageReasonCode code = PackageReaderWriter(fd).writePackage(package);
+    NanduOperation op = ND_CHALLENGE;
+    PackageReasonCode code = NanduReaderWriter(fd).write(op, token);
+
     if (code != PKG_OK) {
-        Error() << "Error when reading package " << code << "." << std::endl;
         return false;
     }
-    Info() << "Token send " << token << "." << std::endl;
+
+    Info("Token send %s.\n", token.c_str());
     return true;
 }
 
 bool NanduServer::waitForHash(int fd, const std::string& token) {
-    Package package;
-    PackageReasonCode code = PackageReaderWriter(fd).readPackage(package);
+    NanduOperation op;
+    std::string hashStr;
+    PackageReasonCode code = NanduReaderWriter(fd).read(op, hashStr);
     if (code != PKG_OK) {
-        Error() << "Error when reading package " << code << "." << std::endl;
         return false;
     }
 
-    NanduOperation op = *(NanduOperation*)package.data();
-    if (op != OpHash) {
-        Error() << "Get wrong opcode" << op << "." << std::endl;
+    if (op != ND_HASH) {
+        Error("Got wrong opcode %d.\n", op);
         return false;
     }
 
-    std::string s = sign(token.c_str(), token.length());
-    if (strncmp(s.c_str(), ((char*)package.data())+sizeof(op), token.length())) {
-        Error() << "Bad hash " << s << std::endl;
+    std::string s = hash(token.c_str(), token.length());
+    if (s != hashStr) {
+        Error("Bad hash %s.\n", hashStr.c_str());
         return false;
     }
-    Info() << "Hash validated " << s << "." << std::endl;
+    Info("Hash validated %s.\n", hashStr.c_str());
+    return true;
+}
+
+bool NanduServer::waitForPushPop(int fd) {
+    NanduOperation op;
+    std::string msg;
+    PackageReasonCode code = NanduReaderWriter(fd).read(op, msg);
+    if (code != PKG_OK) {
+        return false;
+    }
+    if (op == ND_PUSH) {
+        Info("Got push %s.\n", msg.c_str());
+    }else if (op == ND_POP) {
+        Info("Got pop %s.\n", msg.c_str());
+    } else {
+        Error("Got wrong opcode %d.\n", op);
+        return false;
+    }
     return true;
 }
 
 void NanduServer::handleConnection(Connection* conn) {
     std::string token = generateToken();
     if (!sendChallenge(conn->fd, token) ||
-            !waitForHash(conn->fd, token)) {
-        Error() << "Bad request." << std::endl;
+            !waitForHash(conn->fd, token) ||
+            !waitForPushPop(conn->fd)) {
+        Error("Bad request.\n");
         return;
     }
 }

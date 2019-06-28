@@ -24,5 +24,6 @@ public:
 private:
     PackageReasonCode read(unsigned char* buff, size_t toRead);
     PackageReasonCode write(unsigned char* buff, size_t toWrite);
+    void printError(PackageReasonCode code);
     int                             _fd;
 };
