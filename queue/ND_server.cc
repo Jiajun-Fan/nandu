@@ -37,9 +37,9 @@ std::string NanduServer::generateToken() {
 bool NanduServer::sendChallenge(int fd, const std::string& token) {
 
     NanduOperation op = ND_CHALLENGE;
-    PackageReasonCode code = NanduReaderWriter(fd).write(op, token);
+    ReasonCode code = NanduReaderWriter(fd).write(op, token);
 
-    if (code != PKG_OK) {
+    if (code != RC_OK) {
         return false;
     }
 
@@ -50,8 +50,8 @@ bool NanduServer::sendChallenge(int fd, const std::string& token) {
 bool NanduServer::waitForHash(int fd, const std::string& token) {
     NanduOperation op;
     std::string hashStr;
-    PackageReasonCode code = NanduReaderWriter(fd).read(op, hashStr);
-    if (code != PKG_OK) {
+    ReasonCode code = NanduReaderWriter(fd).read(op, hashStr);
+    if (code != RC_OK) {
         return false;
     }
 
@@ -72,8 +72,8 @@ bool NanduServer::waitForHash(int fd, const std::string& token) {
 bool NanduServer::waitForPushPop(int fd) {
     NanduOperation op;
     std::string msg;
-    PackageReasonCode code = NanduReaderWriter(fd).read(op, msg);
-    if (code != PKG_OK) {
+    ReasonCode code = NanduReaderWriter(fd).read(op, msg);
+    if (code != RC_OK) {
         return false;
     }
     if (op == ND_PUSH) {
@@ -81,10 +81,10 @@ bool NanduServer::waitForPushPop(int fd) {
     } else if (op == ND_POP) {
         std::unique_ptr<Task> task = popTask();
         Package taskPkg;
-        TaskReasonCode tc = task->package(taskPkg);
-        if (tc == TSK_OK) {
+        ReasonCode tc = task->package(taskPkg);
+        if (tc == RC_OK) {
             code = NanduReaderWriter(fd).write(ND_PUSH, taskPkg);
-            if (code == PKG_OK) {
+            if (code == RC_OK) {
                 Info("Pop task %s.\n", task->getName().c_str());
             }
         }

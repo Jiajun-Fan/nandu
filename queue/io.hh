@@ -1,12 +1,7 @@
 #pragma once
 #include <memory>
 #include <vector>
-
-typedef enum {
-    PKG_OK = 0,
-    PKG_CORRUPTED,
-    PKG_FD_CLOSED,
-} PackageReasonCode;
+#include "reason_code.hh"
 
 struct RawPackageHead {
     char magic[5];
@@ -19,11 +14,11 @@ class PackageReaderWriter {
 public:
     explicit PackageReaderWriter(int fd);
     virtual ~PackageReaderWriter();
-    PackageReasonCode readPackage(Package& package);
-    PackageReasonCode writePackage(Package& package);
+    ReasonCode readPackage(Package& package);
+    ReasonCode writePackage(const Package& package);
 private:
-    PackageReasonCode read(unsigned char* buff, size_t toRead);
-    PackageReasonCode write(unsigned char* buff, size_t toWrite);
-    void printError(PackageReasonCode code);
+    ReasonCode read(unsigned char* buff, size_t toRead);
+    ReasonCode write(const unsigned char* buff, size_t toWrite);
+    void printError(ReasonCode code);
     int                             _fd;
 };

@@ -15,8 +15,8 @@ public:
     explicit NanduReaderWriter(int fd) : PackageReaderWriter(fd) {}
     virtual ~NanduReaderWriter() {}
 
-    PackageReasonCode read(NanduOperation& op, Package& package);
-    PackageReasonCode write(const NanduOperation& op, Package& package);
-    PackageReasonCode read(NanduOperation& op, std::string& msg);
-    PackageReasonCode write(const NanduOperation& op, const std::string& msg);
+    ReasonCode read(NanduOperation& op, Package& package);
+    ReasonCode write(const NanduOperation& op, const Package& package);
+    ReasonCode read(NanduOperation& op, std::string& msg);
+    ReasonCode write(const NanduOperation& op, const std::string& msg);
 };

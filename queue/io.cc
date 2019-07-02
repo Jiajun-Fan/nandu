@@ -14,7 +14,7 @@ PackageReaderWriter::PackageReaderWriter(int fd) : _fd(fd) {
 PackageReaderWriter::~PackageReaderWriter() {
 }
 
-PackageReasonCode PackageReaderWriter::read(unsigned char* buff, size_t toRead) {
+ReasonCode PackageReaderWriter::read(unsigned char* buff, size_t toRead) {
     while (toRead != 0) {
         ssize_t nbRead = ::read(_fd, buff, toRead);
         if (nbRead < 0) {
@@ -26,26 +26,26 @@ PackageReasonCode PackageReaderWriter::read(unsigned char* buff, size_t toRead) 
                 assert(0);
             }
         } else if (nbRead == 0) {
-            return PKG_FD_CLOSED;
+            return RC_IO_FD_CLOSED;
         } else {
             assert(toRead >= nbRead);
             toRead -= nbRead;
             buff += nbRead;
         }
     }
-    return PKG_OK;
+    return RC_OK;
 }
 
-PackageReasonCode PackageReaderWriter::readPackage(Package& package) {
+ReasonCode PackageReaderWriter::readPackage(Package& package) {
 
     RawPackageHead head;
-    PackageReasonCode code = read((unsigned char*)&head, sizeof(head));
+    ReasonCode code = read((unsigned char*)&head, sizeof(head));
 
-    if (code == PKG_OK) {
+    if (code == RC_OK) {
         if (strncmp(head.magic, kPackageMagic, strlen(kPackageMagic))) {
-            code = PKG_CORRUPTED;
+            code = RC_IO_PKG_CORRUPTED;
         } else if(head.size > kMaxPackageSize) {
-            code = PKG_CORRUPTED;
+            code = RC_IO_PKG_CORRUPTED;
         } else {
             package.resize(head.size);
             code = read(package.data(), head.size);
@@ -56,7 +56,7 @@ PackageReasonCode PackageReaderWriter::readPackage(Package& package) {
     return code;
 }
 
-PackageReasonCode PackageReaderWriter::write(unsigned char* buff, size_t toWrite) {
+ReasonCode PackageReaderWriter::write(const unsigned char* buff, size_t toWrite) {
     while (toWrite != 0) {
         ssize_t nbWrite = ::write(_fd, buff, toWrite);
         if (nbWrite < 0) {
@@ -68,26 +68,26 @@ PackageReasonCode PackageReaderWriter::write(unsigned char* buff, size_t toWrite
                 assert(0);
             }
         } else if (nbWrite == 0) {
-            return PKG_FD_CLOSED;
+            return RC_IO_FD_CLOSED;
         } else {
             assert(toWrite >= nbWrite);
             toWrite -= nbWrite;
             buff += nbWrite;
         }
     }
-    return PKG_OK;
+    return RC_OK;
 }
 
-PackageReasonCode PackageReaderWriter::writePackage(Package& package) {
+ReasonCode PackageReaderWriter::writePackage(const Package& package) {
     RawPackageHead head;
     size_t size = package.size();
 
     memcpy(head.magic, kPackageMagic, strlen(kPackageMagic));
     memcpy(&head.size, &size, sizeof(size));
 
-    PackageReasonCode code = write((unsigned char*)&head, sizeof(head));
+    ReasonCode code = write((unsigned char*)&head, sizeof(head));
 
-    if (code == PKG_OK) {
+    if (code == RC_OK) {
         code = write(package.data(), head.size);
     }
 
@@ -95,14 +95,14 @@ PackageReasonCode PackageReaderWriter::writePackage(Package& package) {
     return code;
 }
 
-void PackageReaderWriter::printError(PackageReasonCode code) {
+void PackageReaderWriter::printError(ReasonCode code) {
     switch (code) {
-    case PKG_OK:
+    case RC_OK:
         break;
-    case PKG_CORRUPTED:
+    case RC_IO_PKG_CORRUPTED:
         Error("Got corrupted package.\n");
         break;
-    case PKG_FD_CLOSED:
+    case RC_IO_FD_CLOSED:
         Error("Connection is closed by remote.\n");
         break;
     default:
