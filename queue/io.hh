@@ -9,7 +9,18 @@ struct RawPackageHead {
     size_t size;
 };
 
-typedef std::vector<unsigned char> Package;
+class Package {
+public:
+    const unsigned char* data() const noexcept { return _data.data(); }
+    unsigned char* data() noexcept { return _data.data(); }
+    void resize(std::vector<unsigned char>::size_type size) { _data.resize(size); }
+    std::vector<unsigned char>::size_type size() const noexcept { return _data.size(); }
+    void push_back(unsigned char c) { _data.push_back(c); }
+    virtual ~Package() {}
+    
+private:
+    std::vector<unsigned char>      _data;
+};
 
 class PackageReaderWriter {
 public:

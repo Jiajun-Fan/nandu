@@ -34,7 +34,7 @@ void Client::push(Package& package) {
         return;
     }
     
-    push_(sockFd, package);
+    push_(sockFd, &package);
 
     close(sockFd);
 }
@@ -55,7 +55,7 @@ void Client::pop(Package& package) {
         return;
     }
     
-    pop_(sockFd, package);
+    pop_(sockFd, &package);
 
     close(sockFd);
 }

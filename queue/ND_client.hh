@@ -12,8 +12,8 @@ public:
                  Hasher(key), Client(host, port) {
     }
     virtual ~NanduClient() {};
-    virtual void push_(int fd, const Package& package);
-    virtual void pop_(int fd, Package& package);
+    virtual void push_(int fd, Package* package);
+    virtual void pop_(int fd, Package* package);
 
 private:
     ReasonCode waitForChallenge(int fd, std::string& token);

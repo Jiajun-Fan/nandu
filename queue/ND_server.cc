@@ -97,6 +97,7 @@ void NanduServer::handleConnection(Connection* conn) {
     CheckReasonCode(waitForHash(conn->fd, token));
     CheckReasonCode(waitForPushPop(conn->fd));
 onExit:
+    printError(code);
     return;
 }
 

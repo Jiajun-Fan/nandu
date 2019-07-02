@@ -14,7 +14,7 @@ static inline ssize_t getStringLength(const unsigned char* buff) {
 static ReasonCode readString(const unsigned char* buff, unsigned char*& ptr, std::string& str) {
     ssize_t strLength = getStringLength(buff);
     if (strLength < 0) {
-        return RC_TSK_EXEC_TOO_LONG;
+        return RC_TSK_STRING_TOO_LONG;
     }
     ptr = (unsigned char*)buff + strLength;
     str = std::string((const char*)buff);
@@ -25,7 +25,7 @@ static ReasonCode readString(const unsigned char* buff, unsigned char*& ptr, std
 static ReasonCode writeString(unsigned char* buff, unsigned char*& ptr, std::string str) {
     size_t strLength = str.length()+1;
     if (strLength > kTaskMaxStringLength) {
-        return RC_TSK_EXEC_TOO_LONG;
+        return RC_TSK_STRING_TOO_LONG;
     }
     memcpy(buff, str.c_str(), strLength);
     ptr = (unsigned char*)buff + strLength;
