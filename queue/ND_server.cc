@@ -27,10 +27,12 @@ std::string NanduServer::generateToken() {
     }
     
     std::stringstream ss;
-    long r = random();
-    unsigned char* p = (unsigned char*)&r;
-    for (unsigned i = 0; i < sizeof(long); i++) {
-        ss << std::hex << std::setw(2) << std::setfill('0') << (int)(p[i]);
+    for (unsigned j = 0; j < 4; j++) {
+        long r = random();
+        unsigned char* p = (unsigned char*)&r;
+        for (unsigned i = 0; i < sizeof(long); i++) {
+            ss << std::hex << std::setw(2) << std::setfill('0') << (int)(p[i]);
+        }
     }
     return ss.str();
 }
@@ -58,8 +60,13 @@ ReasonCode NanduServer::waitForHash(int fd, const std::string& token) {
 
     s = hash(token.c_str(), token.length());
     if (s != hashStr) {
+        op = ND_BAD_HASH;
+        CheckReasonCode(NanduReaderWriter(fd).write(op, hashStr));
         CheckReasonCode(RC_ND_BAD_HASH);
     }
+
+    op = ND_VALIDATED;
+    CheckReasonCode(NanduReaderWriter(fd).write(op, hashStr));
 
     Info("Hash validated %s.\n", hashStr.c_str());
 onExit:
@@ -76,12 +83,14 @@ ReasonCode NanduServer::waitForPushPop(int fd) {
     if (op == ND_PUSH) {
         CheckReasonCode(CreateTaskFromPackage(taskPkg, task));
         pushTask((uint32_t)time(NULL), task);
-        Info("Push task %s.\n", task.getName().c_str());
+        Info("Push task.\n", task.getName().c_str());
+        task.printTask();
     } else if (op == ND_POP) {
         task = popTask();
         CheckReasonCode(task.package(taskPkg));
         CheckReasonCode(NanduReaderWriter(fd).write(ND_POP, taskPkg));
-        Info("Pop task %s.\n", task.getName().c_str());
+        Info("Pop task.\n", task.getName().c_str());
+        task.printTask();
     } else {
         CheckReasonCode(RC_ND_WRONG_CODE);
     }

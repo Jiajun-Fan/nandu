@@ -24,6 +24,8 @@ public:
     const std::string& getName() const { return _name; }
     void setName(const std::string& name) { _name = name; }
     ReasonCode package(Package& package);
+    void printTask();
+    void reset() { _name = ""; _params.clear(); }
 private:
     std::string                                     _name;
     std::list<std::string>                          _params;

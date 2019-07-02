@@ -1,5 +1,6 @@
 #include "task.hh"
 #include <string.h>
+#include <sstream>
 #include "log.hh"
 
 static inline ssize_t getStringLength(const unsigned char* buff) {
@@ -33,6 +34,9 @@ static ReasonCode writeString(unsigned char* buff, unsigned char*& ptr, std::str
 }
 
 ReasonCode CreateTaskFromPackage(Package& package, Task& task) {
+
+    task.reset();
+
     std::string name;
 
     unsigned char* ptr = package.data();
@@ -86,4 +90,13 @@ ReasonCode Task::package(Package& package) {
 
 onExit:
     return code;
+}
+
+void Task::printTask() {
+    std::stringstream ss;
+    ss << _name << " ";
+    for (auto it = _params.begin(); it != _params.end(); it++) {
+        ss << *it << " ";
+    }
+    Info("%s\n", ss.str().c_str());
 }

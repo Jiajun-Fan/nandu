@@ -5,6 +5,8 @@
 typedef enum {
     ND_CHALLENGE = 0,
     ND_HASH,
+    ND_VALIDATED,
+    ND_BAD_HASH,
     ND_PUSH,
     ND_POP,
     ND_BAD_OPT

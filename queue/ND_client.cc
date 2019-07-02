@@ -25,6 +25,12 @@ ReasonCode NanduClient::sendHash(int fd, const std::string& token) {
 
     CheckReasonCode(NanduReaderWriter(fd).write(op, hashStr));
     Info("Hash send %s.\n", hashStr.c_str());
+
+    CheckReasonCode(NanduReaderWriter(fd).read(op, hashStr));
+    if (op != ND_VALIDATED) {
+        CheckReasonCode(RC_ND_BAD_HASH);
+    }
+    Info("Hash validated %s.\n", hashStr.c_str());
 onExit:
     return code;
 }
@@ -40,6 +46,8 @@ void NanduClient::push_(int fd, Package* package) {
     CheckReasonCode(sendHash(fd, token));
 
     CheckReasonCode(NanduReaderWriter(fd).write(op, *task));
+    Info("push task.\n");
+    task->printTask();
 onExit:
     printError(code);
     return;
@@ -60,6 +68,8 @@ void NanduClient::pop_(int fd, Package* package) {
         CheckReasonCode(RC_ND_WRONG_CODE);
     }
     CheckReasonCode(task->toTask());
+    Info("pop task.\n");
+    task->printTask();
 onExit:
     printError(code);
     return;

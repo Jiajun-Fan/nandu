@@ -1,31 +1,22 @@
 #include "reason_code.hh"
+#include <assert.h>
 #include <stdio.h>
 
+const char* kErrorMessageTable[] = {
+    NULL,
+    "Got corrupted package.\n",
+    "The file descriptor is already closed.\n",
+    "Connection reset by peer.\n",
+    "Unknown I/O error.\n",
+    "The string used in Task is too long.\n",
+    "Too many parameters in task.\n",
+    "Wrong opcode.\n",
+    "Bad hash.\n"
+};
+
 void printError(ReasonCode code) {
-
-    switch (code) {
-    case RC_OK:
-        break;
-    case RC_IO_PKG_CORRUPTED:
-        Error("Got corrupted package.\n");
-        break;
-    case RC_IO_FD_CLOSED:
-        Error("The file descriptor is already closed.\n");
-        break;
-    case RC_TSK_STRING_TOO_LONG:
-        Error("The string used in Task is too long.\n");
-        break;
-    case RC_TSK_TOOMANY_PARAMS:
-        Error("Too many parameters in task.\n");
-        break;
-    case RC_ND_WRONG_CODE:
-        Error("Got wrong opcode.\n");
-        break;
-    case RC_ND_BAD_HASH:
-        Error("Got bad hash.\n");
-        break;
-    default:
-        break;
+    assert(code < (sizeof(kErrorMessageTable) / sizeof(const char*)));
+    if (code != RC_OK) {
+        Error(kErrorMessageTable[code]);
     }
-
 }

@@ -22,8 +22,11 @@ ReasonCode PackageReaderWriter::read(unsigned char* buff, size_t toRead) {
             case EAGAIN:
             case EINTR:
                 continue;
+            case ECONNRESET:
+                return RC_IO_CONN_RESET;
             default:
-                assert(0);
+                perror(NULL);
+                return RC_IO_UNKNOWN;
             }
         } else if (nbRead == 0) {
             return RC_IO_FD_CLOSED;

@@ -8,10 +8,11 @@ int main() {
     NanduTask task1(Task("fuck"));
     NanduTask task2(Task("whatever"));
 
-    client.push(task1);
-    Info("Push task %s\n", task1.getName().c_str());
+    task1.addParam("-param1");
+    task1.addParam("-param2");
 
+    client.push(task1);
     client.pop(task2);
-    Info("Pop task %s\n", task2.getName().c_str());
+    client.pop(task2);
     return 0;
 }

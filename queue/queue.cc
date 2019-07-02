@@ -20,7 +20,9 @@ Task Queue::popTask() {
     pthread_mutex_lock(&_lock);
     if (_tasks.size() == 0) {
         pthread_mutex_unlock(&_lock);
-        return Task("sleep");
+        Task sleep("sleep");
+        sleep.addParam("1");
+        return sleep;
     } else {
         Task ret(_tasks.begin()->second);
         _tasks.erase(_tasks.begin());
