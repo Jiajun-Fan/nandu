@@ -3,75 +3,71 @@
 #include "log.hh"
 #include "task.hh"
 
-bool NanduClient::waitForChallenge(int fd, std::string& token) {
+ReasonCode NanduClient::waitForChallenge(int fd, std::string& token) {
     NanduOperation op;
-    ReasonCode code = NanduReaderWriter(fd).read(op, token);
-
-    if (code != RC_OK) {
-        return false;
-    }
+    ReasonCode code;
+    CheckReasonCode(NanduReaderWriter(fd).read(op, token));
 
     if (op != ND_CHALLENGE) {
-        Error("Got wrong opcode %d.\n", op);
-        return false;
+        CheckReasonCode(RC_ND_WRONG_CODE);
     }
 
     Info("Got token %s.\n", token.c_str());
 
-    return true;
+onExit:
+    return code;
 }
 
-bool NanduClient::sendHash(int fd, const std::string& token) {
+ReasonCode NanduClient::sendHash(int fd, const std::string& token) {
     NanduOperation op = ND_HASH;
+    ReasonCode code;
     std::string hashStr = hash(token.c_str(), token.length());
 
-    ReasonCode code = NanduReaderWriter(fd).write(op, hashStr);
-    if (code != RC_OK) {
-        return false;
-    }
+    CheckReasonCode(NanduReaderWriter(fd).write(op, hashStr));
     Info("Hash send %s.\n", hashStr.c_str());
-    return true;
+onExit:
+    return code;
 }
 
-void NanduClient::push_(int fd, Package& package) {
+void NanduClient::push_(int fd, const Package& package) {
     std::string token;
-    if (!waitForChallenge(fd, token) ||
-            !sendHash(fd, token)) {
-        Error("Failed to auth.\n");
-        return;
-    }
-
-    std::string fuck("fuck");
+    ReasonCode code;
+    Package taskPkg;
+    Task task("fuck");
+    task.addParam("1");
+    task.addParam("2");
+    task.addParam("xxx");
     NanduOperation op = ND_PUSH;
-    ReasonCode code = NanduReaderWriter(fd).write(op, fuck);
+
+    CheckReasonCode(waitForChallenge(fd, token));
+    CheckReasonCode(sendHash(fd, token));
+
+    CheckReasonCode(task.package(taskPkg));
+    CheckReasonCode(NanduReaderWriter(fd).write(op, taskPkg));
+
+    Info("Push task %s\n", task.getName().c_str());
+onExit:
+    return;
 }
 
 void NanduClient::pop_(int fd, Package& package) {
     std::string token;
-    if (!waitForChallenge(fd, token) ||
-            !sendHash(fd, token)) {
-        Error("Failed to auth.\n");
-        return;
-    }
-
+    ReasonCode code;
+    Package taskPkg;
+    Task task;
     NanduOperation op = ND_POP;
-    ReasonCode code = NanduReaderWriter(fd).write(op, std::string(""));
 
-    if (code == RC_OK) {
-        Package taskPkg;
-        ReasonCode code = NanduReaderWriter(fd).read(op, taskPkg);
-        if (code != RC_OK) {
-            return;
-        }
-        if (op != ND_PUSH) {
-            Error("Got wrong opcode %d.\n", op);
-            return;
-        }
-        Task task;
-        ReasonCode tc = CreateTaskFromPackage(taskPkg, task);
-        if (tc != RC_OK) {
-            return;
-        }
-        Info("Got task %s\n", task.getName().c_str());
+    CheckReasonCode(waitForChallenge(fd, token));
+    CheckReasonCode(sendHash(fd, token));
+    CheckReasonCode(NanduReaderWriter(fd).write(op, std::string("")));
+
+    CheckReasonCode(NanduReaderWriter(fd).read(op, taskPkg));
+    if (op != ND_POP) {
+        CheckReasonCode(RC_ND_WRONG_CODE);
     }
+    CheckReasonCode(CreateTaskFromPackage(taskPkg, task));
+
+    Info("Pop task %s\n", task.getName().c_str());
+onExit:
+    return;
 }

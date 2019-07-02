@@ -11,7 +11,7 @@ public:
     void push(Package& package);
     void pop(Package& package);
     // to be overwritten in derived class
-    virtual void push_(int fd, Package& package) = 0;
+    virtual void push_(int fd, const Package& package) = 0;
     virtual void pop_(int fd, Package& package) = 0;
 
 private:

@@ -1,6 +1,7 @@
 #pragma once
-#include <memory>
+#include <sys/types.h>
 #include <vector>
+#include <string>
 #include "reason_code.hh"
 
 struct RawPackageHead {

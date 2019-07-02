@@ -39,20 +39,20 @@ ReasonCode PackageReaderWriter::read(unsigned char* buff, size_t toRead) {
 ReasonCode PackageReaderWriter::readPackage(Package& package) {
 
     RawPackageHead head;
-    ReasonCode code = read((unsigned char*)&head, sizeof(head));
+    ReasonCode code;
 
-    if (code == RC_OK) {
-        if (strncmp(head.magic, kPackageMagic, strlen(kPackageMagic))) {
-            code = RC_IO_PKG_CORRUPTED;
-        } else if(head.size > kMaxPackageSize) {
-            code = RC_IO_PKG_CORRUPTED;
-        } else {
-            package.resize(head.size);
-            code = read(package.data(), head.size);
-        }
+    CheckReasonCode(read((unsigned char*)&head, sizeof(head)));
+
+    if (strncmp(head.magic, kPackageMagic, strlen(kPackageMagic))) {
+        CheckReasonCode(RC_IO_PKG_CORRUPTED);
+    } else if(head.size > kMaxPackageSize) {
+        CheckReasonCode(RC_IO_PKG_CORRUPTED);
+    } else {
+        package.resize(head.size);
+        CheckReasonCode(read(package.data(), head.size));
     }
 
-    printError(code);
+onExit:
     return code;
 }
 
@@ -80,18 +80,16 @@ ReasonCode PackageReaderWriter::write(const unsigned char* buff, size_t toWrite)
 
 ReasonCode PackageReaderWriter::writePackage(const Package& package) {
     RawPackageHead head;
-    size_t size = package.size();
+    ReasonCode code;
 
+    size_t size = package.size();
     memcpy(head.magic, kPackageMagic, strlen(kPackageMagic));
     memcpy(&head.size, &size, sizeof(size));
 
-    ReasonCode code = write((unsigned char*)&head, sizeof(head));
+    CheckReasonCode(write((unsigned char*)&head, sizeof(head)));
+    CheckReasonCode(write(package.data(), head.size));
 
-    if (code == RC_OK) {
-        code = write(package.data(), head.size);
-    }
-
-    printError(code);
+onExit:
     return code;
 }
 

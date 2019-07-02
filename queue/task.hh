@@ -1,14 +1,13 @@
 #pragma once
 #include <stdint.h>
 #include <limits.h>
-#include <memory>
 #include <string>
 #include <list>
 #include "io.hh"
 #include "reason_code.hh"
 
-#define kMaxTaskLength PATH_MAX
-#define kMaxParamNum PATH_MAX
+#define kTaskMaxStringLength PATH_MAX
+#define kTaskMaxParamNum PATH_MAX
 
 class Task;
 

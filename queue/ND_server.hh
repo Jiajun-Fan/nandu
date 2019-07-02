@@ -12,8 +12,8 @@ public:
     virtual void handleConnection(Connection* conn);
 
 private:
-    bool sendChallenge(int fd, const std::string& token);
-    bool waitForHash(int fd, const std::string& token);
-    bool waitForPushPop(int fd);
+    ReasonCode sendChallenge(int fd, const std::string& token);
+    ReasonCode waitForHash(int fd, const std::string& token);
+    ReasonCode waitForPushPop(int fd);
     std::string generateToken();
 };
