@@ -25,6 +25,7 @@ ReasonCode PackageReaderWriter::read(unsigned char* buff, size_t toRead) {
             case ECONNRESET:
                 return RC_IO_CONN_RESET;
             default:
+                Debug("");
                 perror(NULL);
                 return RC_IO_UNKNOWN;
             }
@@ -47,8 +48,11 @@ ReasonCode PackageReaderWriter::readPackage(Package& package) {
     CheckReasonCode(read((unsigned char*)&head, sizeof(head)));
 
     if (strncmp(head.magic, kPackageMagic, strlen(kPackageMagic))) {
+        Debug("Got magic \"%c%c%c%c%c\".\n", head.magic[0], head.magic[1], 
+                head.magic[2], head.magic[3], head.magic[4]);
         CheckReasonCode(RC_IO_PKG_CORRUPTED);
     } else if(head.size > kMaxPackageSize) {
+        Debug("Got package size %lu.\n", (unsigned long)head.size);
         CheckReasonCode(RC_IO_PKG_CORRUPTED);
     } else {
         package.resize(head.size);

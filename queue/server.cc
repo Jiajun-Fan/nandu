@@ -80,6 +80,7 @@ Server::Server(bool local, int port) :
 Server::~Server() {
     if (_sock_fd) {
         close(_sock_fd);
+        _sock_fd = 0;
     }
     pthread_mutex_destroy(&_lock);
 }

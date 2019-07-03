@@ -3,7 +3,9 @@
 #include "log.hh"
 
 int main() {
+#ifndef NDEBUG
     SetLogLevel(kLogDebug);
+#endif
     NanduClient client("127.0.0.1", 6161, "password");
     NanduTask task1(Task("fuck"));
     NanduTask task2(Task("whatever"));

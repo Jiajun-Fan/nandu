@@ -52,7 +52,7 @@ inline void Info(const char* fmt, ...) {
         return;
     }
     va_list argptr;
-    fprintf(stderr, "[ INFO  ]: ");
+    fprintf(stderr, "[ INFO  ]: %d ", gLogLevel);
     va_start(argptr, fmt);
     vfprintf(stderr, fmt, argptr);
     va_end(argptr);
@@ -70,12 +70,14 @@ inline void Note(const char* fmt, ...) {
 }
 
 inline void Debug(const char* fmt, ...) {
+#ifndef NDEBUG
     if (gLogLevel < kLogDebug) {
         return;
     }
-    fprintf(stderr, "[ DEBUG ]: ");
+    fprintf(stderr, "[ DEBUG ]: (%s:%d) ", __FILE__, __LINE__);
     va_list argptr;
     va_start(argptr, fmt);
     vfprintf(stderr, fmt, argptr);
     va_end(argptr);
+#endif
 }

@@ -55,6 +55,7 @@ ReasonCode NanduServer::waitForHash(int fd, const std::string& token) {
     std::string s;
     CheckReasonCode(NanduReaderWriter(fd).read(op, hashStr));
     if (op != ND_HASH) {
+        Debug("Got opcode %d.\n", op);
         CheckReasonCode(RC_ND_WRONG_CODE);
     }
 

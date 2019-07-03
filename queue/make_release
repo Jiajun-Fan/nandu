@@ -1,5 +1,5 @@
 #/bin/bash 
 mkdir Release 
 cd Release 
-cmake ..
+cmake -DCMAKE_BUILDTYPE=Release ..
 make -j4

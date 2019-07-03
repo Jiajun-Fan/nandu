@@ -9,6 +9,7 @@ ReasonCode NanduClient::waitForChallenge(int fd, std::string& token) {
     CheckReasonCode(NanduReaderWriter(fd).read(op, token));
 
     if (op != ND_CHALLENGE) {
+        Debug("Got opcode %d.\n", op);
         CheckReasonCode(RC_ND_WRONG_CODE);
     }
 
@@ -65,6 +66,7 @@ void NanduClient::pop_(int fd, Package* package) {
 
     CheckReasonCode(NanduReaderWriter(fd).read(op, *task));
     if (op != ND_POP) {
+        Debug("Got opcode %d.\n", op);
         CheckReasonCode(RC_ND_WRONG_CODE);
     }
     CheckReasonCode(task->toTask());
