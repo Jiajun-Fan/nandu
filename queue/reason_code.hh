@@ -8,8 +8,8 @@ typedef enum {
     RC_IO_UNKNOWN,
     RC_TSK_STRING_TOO_LONG,
     RC_TSK_TOOMANY_PARAMS,
-    RC_ND_WRONG_CODE,
-    RC_ND_BAD_HASH,
+    RC_OP_WRONG_CODE,
+    RC_AUTH_BAD_HASH,
 } ReasonCode;
 
 #define CheckReasonCode(p) code = p; \

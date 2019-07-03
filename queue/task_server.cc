@@ -9,19 +9,19 @@ ReasonCode TaskServer::handleOperation(Connection* conn) {
     Package taskPkg;
     CheckReasonCode(OperationReaderWriter(fd).read(op, taskPkg));
 
-    if (op == ND_PUSH) {
+    if (op == OP_PUSH) {
         CheckReasonCode(CreateTaskFromPackage(taskPkg, task));
         pushTask((uint32_t)time(NULL), task);
         Info("Push task.\n", task.getName().c_str());
         task.printTask();
-    } else if (op == ND_POP) {
+    } else if (op == OP_POP) {
         task = popTask();
         CheckReasonCode(task.package(taskPkg));
-        CheckReasonCode(OperationReaderWriter(fd).write(ND_POP, taskPkg));
+        CheckReasonCode(OperationReaderWriter(fd).write(OP_POP, taskPkg));
         Info("Pop task.\n", task.getName().c_str());
         task.printTask();
     } else {
-        CheckReasonCode(RC_ND_WRONG_CODE);
+        CheckReasonCode(RC_OP_WRONG_CODE);
     }
 
 onExit:

@@ -41,7 +41,7 @@ std::string AuthServer::generateToken() {
 ReasonCode AuthServer::auth(int fd) {
 
     std::string token = generateToken();
-    Operation op = ND_CHALLENGE;
+    Operation op = OP_CHALLENGE;
     ReasonCode code;
 
     std::string hashStr;
@@ -53,19 +53,19 @@ ReasonCode AuthServer::auth(int fd) {
 
     // recieve package
     CheckReasonCode(OperationReaderWriter(fd).read(op, hashStr));
-    if (op != ND_HASH) {
+    if (op != OP_HASH) {
         Debug("Got opcode %d.\n", op);
-        CheckReasonCode(RC_ND_WRONG_CODE);
+        CheckReasonCode(RC_OP_WRONG_CODE);
     }
 
     // validate hash
     s = hash(token.c_str(), token.length());
     if (s != hashStr) {
-        op = ND_BAD_HASH;
+        op = OP_BAD_HASH;
         CheckReasonCode(OperationReaderWriter(fd).write(op, hashStr));
-        CheckReasonCode(RC_ND_BAD_HASH);
+        CheckReasonCode(RC_AUTH_BAD_HASH);
     } else {
-        op = ND_VALIDATED;
+        op = OP_VALIDATED;
         CheckReasonCode(OperationReaderWriter(fd).write(op, hashStr));
         Info("Hash validated %s.\n", hashStr.c_str());
     }

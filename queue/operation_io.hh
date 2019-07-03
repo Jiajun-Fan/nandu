@@ -3,13 +3,13 @@
 #include <string.h>
 
 typedef enum {
-    ND_CHALLENGE = 0,
-    ND_HASH,
-    ND_VALIDATED,
-    ND_BAD_HASH,
-    ND_PUSH,
-    ND_POP,
-    ND_BAD_OPT
+    OP_CHALLENGE = 0,
+    OP_HASH,
+    OP_VALIDATED,
+    OP_BAD_HASH,
+    OP_PUSH,
+    OP_POP,
+    OP_BAD_OPT
 } Operation;
 
 class OperationReaderWriter : public PackageReaderWriter {

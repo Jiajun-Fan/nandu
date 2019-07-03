@@ -8,9 +8,9 @@ ReasonCode TaskClient::waitForChallenge(int fd, std::string& token) {
     ReasonCode code;
     CheckReasonCode(OperationReaderWriter(fd).read(op, token));
 
-    if (op != ND_CHALLENGE) {
+    if (op != OP_CHALLENGE) {
         Debug("Got opcode %d.\n", op);
-        CheckReasonCode(RC_ND_WRONG_CODE);
+        CheckReasonCode(RC_OP_WRONG_CODE);
     }
 
     Info("Got token %s.\n", token.c_str());
@@ -20,7 +20,7 @@ onExit:
 }
 
 ReasonCode TaskClient::sendHash(int fd, const std::string& token) {
-    Operation op = ND_HASH;
+    Operation op = OP_HASH;
     ReasonCode code;
     std::string hashStr = hash(token.c_str(), token.length());
 
@@ -28,8 +28,8 @@ ReasonCode TaskClient::sendHash(int fd, const std::string& token) {
     Info("Hash send %s.\n", hashStr.c_str());
 
     CheckReasonCode(OperationReaderWriter(fd).read(op, hashStr));
-    if (op != ND_VALIDATED) {
-        CheckReasonCode(RC_ND_BAD_HASH);
+    if (op != OP_VALIDATED) {
+        CheckReasonCode(RC_AUTH_BAD_HASH);
     }
     Info("Hash validated %s.\n", hashStr.c_str());
 onExit:
@@ -40,7 +40,7 @@ void TaskClient::push_(int fd, Package* package) {
     std::string token;
     ReasonCode code;
     PackagedTask* task = dynamic_cast<PackagedTask*>(package);
-    Operation op = ND_PUSH;
+    Operation op = OP_PUSH;
 
     CheckReasonCode(task->toPackage());
     CheckReasonCode(waitForChallenge(fd, token));
@@ -58,16 +58,16 @@ void TaskClient::pop_(int fd, Package* package) {
     std::string token;
     ReasonCode code;
     PackagedTask* task = dynamic_cast<PackagedTask*>(package);
-    Operation op = ND_POP;
+    Operation op = OP_POP;
 
     CheckReasonCode(waitForChallenge(fd, token));
     CheckReasonCode(sendHash(fd, token));
     CheckReasonCode(OperationReaderWriter(fd).write(op, std::string("")));
 
     CheckReasonCode(OperationReaderWriter(fd).read(op, *task));
-    if (op != ND_POP) {
+    if (op != OP_POP) {
         Debug("Got opcode %d.\n", op);
-        CheckReasonCode(RC_ND_WRONG_CODE);
+        CheckReasonCode(RC_OP_WRONG_CODE);
     }
     CheckReasonCode(task->toTask());
     Info("pop task.\n");
