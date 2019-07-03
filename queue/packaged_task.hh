@@ -1,15 +1,15 @@
 #pragma once
 #include "task.hh"
 #include "reason_code.hh"
-class NanduTask : public Task, public Package {
+class PackagedTask : public Task, public Package {
 public:
-    explicit NanduTask(const Package& package) : 
+    explicit PackagedTask(const Package& package) : 
        Package(package) {
     } 
-    explicit NanduTask(const Task& task) :
+    explicit PackagedTask(const Task& task) :
         Task(task) {
     }
-    virtual ~NanduTask() {}
+    virtual ~PackagedTask() {}
     ReasonCode toPackage();
     ReasonCode toTask();
 };

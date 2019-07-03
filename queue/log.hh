@@ -52,7 +52,7 @@ inline void Info(const char* fmt, ...) {
         return;
     }
     va_list argptr;
-    fprintf(stderr, "[ INFO  ]: %d ", gLogLevel);
+    fprintf(stderr, "[ INFO  ]: ");
     va_start(argptr, fmt);
     vfprintf(stderr, fmt, argptr);
     va_end(argptr);

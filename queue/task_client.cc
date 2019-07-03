@@ -1,12 +1,12 @@
-#include "ND_client.hh"
+#include "task_client.hh"
 #include <string.h>
 #include "log.hh"
-#include "ND_task.hh"
+#include "packaged_task.hh"
 
-ReasonCode NanduClient::waitForChallenge(int fd, std::string& token) {
-    NanduOperation op;
+ReasonCode TaskClient::waitForChallenge(int fd, std::string& token) {
+    Operation op;
     ReasonCode code;
-    CheckReasonCode(NanduReaderWriter(fd).read(op, token));
+    CheckReasonCode(OperationReaderWriter(fd).read(op, token));
 
     if (op != ND_CHALLENGE) {
         Debug("Got opcode %d.\n", op);
@@ -19,15 +19,15 @@ onExit:
     return code;
 }
 
-ReasonCode NanduClient::sendHash(int fd, const std::string& token) {
-    NanduOperation op = ND_HASH;
+ReasonCode TaskClient::sendHash(int fd, const std::string& token) {
+    Operation op = ND_HASH;
     ReasonCode code;
     std::string hashStr = hash(token.c_str(), token.length());
 
-    CheckReasonCode(NanduReaderWriter(fd).write(op, hashStr));
+    CheckReasonCode(OperationReaderWriter(fd).write(op, hashStr));
     Info("Hash send %s.\n", hashStr.c_str());
 
-    CheckReasonCode(NanduReaderWriter(fd).read(op, hashStr));
+    CheckReasonCode(OperationReaderWriter(fd).read(op, hashStr));
     if (op != ND_VALIDATED) {
         CheckReasonCode(RC_ND_BAD_HASH);
     }
@@ -36,17 +36,17 @@ onExit:
     return code;
 }
 
-void NanduClient::push_(int fd, Package* package) {
+void TaskClient::push_(int fd, Package* package) {
     std::string token;
     ReasonCode code;
-    NanduTask* task = dynamic_cast<NanduTask*>(package);
-    NanduOperation op = ND_PUSH;
+    PackagedTask* task = dynamic_cast<PackagedTask*>(package);
+    Operation op = ND_PUSH;
 
     CheckReasonCode(task->toPackage());
     CheckReasonCode(waitForChallenge(fd, token));
     CheckReasonCode(sendHash(fd, token));
 
-    CheckReasonCode(NanduReaderWriter(fd).write(op, *task));
+    CheckReasonCode(OperationReaderWriter(fd).write(op, *task));
     Info("push task.\n");
     task->printTask();
 onExit:
@@ -54,17 +54,17 @@ onExit:
     return;
 }
 
-void NanduClient::pop_(int fd, Package* package) {
+void TaskClient::pop_(int fd, Package* package) {
     std::string token;
     ReasonCode code;
-    NanduTask* task = dynamic_cast<NanduTask*>(package);
-    NanduOperation op = ND_POP;
+    PackagedTask* task = dynamic_cast<PackagedTask*>(package);
+    Operation op = ND_POP;
 
     CheckReasonCode(waitForChallenge(fd, token));
     CheckReasonCode(sendHash(fd, token));
-    CheckReasonCode(NanduReaderWriter(fd).write(op, std::string("")));
+    CheckReasonCode(OperationReaderWriter(fd).write(op, std::string("")));
 
-    CheckReasonCode(NanduReaderWriter(fd).read(op, *task));
+    CheckReasonCode(OperationReaderWriter(fd).read(op, *task));
     if (op != ND_POP) {
         Debug("Got opcode %d.\n", op);
         CheckReasonCode(RC_ND_WRONG_CODE);
