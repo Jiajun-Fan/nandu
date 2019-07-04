@@ -7,5 +7,5 @@ public:
     TaskServer(bool local, int port, const std::string& key) :
         AuthServer(local, port, key) {}
     virtual ~TaskServer() {}
-    virtual ReasonCode handleOperation(Connection* conn);
+    virtual ReasonCode handleConnection(int fd);
 };

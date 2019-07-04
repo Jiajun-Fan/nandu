@@ -25,7 +25,7 @@ ReasonCode PackageReaderWriter::read(unsigned char* buff, size_t toRead) {
             case ECONNRESET:
                 return RC_IO_CONN_RESET;
             default:
-                Debug("");
+                Debug("%s", "");
                 perror(NULL);
                 return RC_IO_UNKNOWN;
             }
@@ -94,7 +94,7 @@ ReasonCode PackageReaderWriter::writePackage(const Package& package) {
     memcpy(&head.size, &size, sizeof(size));
 
     CheckReasonCode(write((unsigned char*)&head, sizeof(head)));
-    CheckReasonCode(write(package.data(), head.size));
+    CheckReasonCode(write(package.cData(), head.size));
 
 onExit:
     return code;

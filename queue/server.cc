@@ -46,7 +46,9 @@ static void setupThread(Connection* conn) {
     memset(&timerSpec, 0, sizeof(timerSpec));
     timerSpec.it_value.tv_sec = kTimeout;
 
+#ifdef NDEBUG
     timer_settime(conn->timerId, 0, &timerSpec, NULL);
+#endif
 }
 
 static void* handleConnection(void* args) {
@@ -56,7 +58,10 @@ static void* handleConnection(void* args) {
     setupThread(conn);
 
     // run the handler
-    conn->server->handleConnection(conn);
+    ReasonCode code = conn->server->handleConnection(conn->fd);
+
+    // print error if any
+    printError(code);
 
     // free resource
     cleanUpThread(conn);
@@ -156,3 +161,32 @@ void Server::run() {
     }
 }
 
+ReasonCode Server::handleConnection(int fd) {
+    ReasonCode code;
+
+    Session session = { fd, S_INIT, NULL, "", false };
+    Operation in, out;
+    std::string doneMsg;
+    in.setOpCode(OP_AUTH_INIT);
+
+    if (needAuth()) {
+        session.curState = S_AUTH_INIT;
+        CheckReasonCode(runOperation(session, in));
+    } else {
+        out.setOpCode(OP_AUTH_INIT);
+        CheckReasonCode(out.write(session.fd));
+    }
+
+    while (session.curState != S_DONE) {
+        CheckReasonCode(in.read(session.fd));
+        if (in.opCode() == OP_DONE) {
+            CheckReasonCode(Operation2String(in, doneMsg));
+            Debug("%s\n", doneMsg);
+            break;
+        }
+        CheckReasonCode(runOperation(session, in));
+    }
+
+onExit:
+    return RC_OK;
+}

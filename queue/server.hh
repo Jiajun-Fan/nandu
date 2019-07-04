@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <string>
 #include <vector>
+#include "service.hh"
 
 #define kRemoteServer (false)
 #define kLocalServer (true)
@@ -20,12 +21,12 @@ struct Connection {
 
 typedef void (*SignalHandler)(int, siginfo_t*);
 
-class Server {
+class Server : public ServiceManager {
 public:
     Server(bool local, int port);
     virtual ~Server();
     void run();
-    virtual void handleConnection(Connection* conn) = 0;
+    ReasonCode handleConnection(int fd);
     void addThreadToBeJoin(const pthread_t& tid);
 
 private:

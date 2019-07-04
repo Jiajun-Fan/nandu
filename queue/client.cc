@@ -18,28 +18,7 @@ Client::Client(const std::string& host, int port) :
 Client::~Client() {
 }
 
-void Client::push(Package& package) {
-    int sockFd = socket(AF_INET, SOCK_STREAM, 0);
-    assert(sockFd > 0);
-
-    struct sockaddr_in servAddr;
-    memset(&servAddr, 0, sizeof(servAddr));
-
-    servAddr.sin_family = AF_INET;
-    servAddr.sin_addr.s_addr = _addr;
-    servAddr.sin_port = htons(_port);
-
-    if (::connect(sockFd, (struct sockaddr*)&servAddr, sizeof(servAddr)) != 0) {
-        Error("Failed to create socket.\n");
-        return;
-    }
-    
-    push_(sockFd, &package);
-
-    close(sockFd);
-}
-
-void Client::pop(Package& package) {
+void Client::run() {
     int sockFd = socket(AF_INET, SOCK_STREAM, 0);
     assert(sockFd > 0);
 
@@ -54,8 +33,38 @@ void Client::pop(Package& package) {
         Error("Failed to connect to server.\n");
         return;
     }
-    
-    pop_(sockFd, &package);
 
+    Session session = { sockFd, C_INIT, NULL, "", false};
+    ReasonCode code;
+    std::string doneMsg;
+    Operation auth, out, in;
+    CheckReasonCode(auth.read(sockFd));
+    if (auth.opCode() != OP_AUTH_INIT) {
+        Debug("opcode %d\n", auth.opCode());
+        CheckReasonCode(RC_OP_WRONG_CODE);
+    }
+    if (auth.getData()->size() != 0) {
+        if (hasAuth()) {
+            session.curState = C_AUTH_INIT;
+            CheckReasonCode(runOperation(session, auth));
+        } else {
+            out.setOpCode(OP_DONE);
+            CheckReasonCode(out.write(sockFd));
+            Debug("opcode %d\n", auth.opCode());
+            CheckReasonCode(RC_OP_UNSUPPORTED);
+        }
+    }
+    while (session.curState != C_DONE) {
+        CheckReasonCode(in.read(session.fd));
+        if (in.opCode() == OP_DONE) {
+            CheckReasonCode(Operation2String(in, doneMsg));
+            Debug("%s\n", doneMsg.c_str());
+            break;
+        }
+        CheckReasonCode(runOperation(session, in));
+    }
+
+onExit:
     close(sockFd);
+    printError(code);
 }

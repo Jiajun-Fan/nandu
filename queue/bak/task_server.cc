@@ -1,12 +1,12 @@
 #include "task_server.hh"
-#include "operation_io.hh"
+#include "operation.hh"
 
-ReasonCode TaskServer::handleOperation(Connection* conn) {
-    int fd = conn->fd;
+ReasonCode TaskServer::handleConnection(int fd) {
     Operation op;
     ReasonCode code;
     Task task;
     Package taskPkg;
+    CheckReasonCode(AuthServer::handleConnection(fd));
     CheckReasonCode(OperationReaderWriter(fd).read(op, taskPkg));
 
     if (op == OP_PUSH) {

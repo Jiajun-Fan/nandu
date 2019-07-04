@@ -10,8 +10,10 @@ const char* kErrorMessageTable[] = {
     "Unknown I/O error.\n",
     "The string used in Task is too long.\n",
     "Too many parameters in task.\n",
+    "Unsupported opcode.\n",
     "Wrong opcode.\n",
-    "Bad hash.\n"
+    "Operation data is not a string.\n",
+    "Double register operation handler.\n",
 };
 
 void printError(ReasonCode code) {

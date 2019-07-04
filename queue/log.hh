@@ -69,15 +69,12 @@ inline void Note(const char* fmt, ...) {
     va_end(argptr);
 }
 
-inline void Debug(const char* fmt, ...) {
 #ifndef NDEBUG
-    if (gLogLevel < kLogDebug) {
-        return;
+#define Debug(format, args...) \
+    if (gLogLevel >= kLogDebug) { \
+        fprintf(stderr, "[ DEBUG ]: (%s:%d) ", __FILE__, __LINE__); \
+        fprintf(stderr, format, args); \
     }
-    fprintf(stderr, "[ DEBUG ]: (%s:%d) ", __FILE__, __LINE__);
-    va_list argptr;
-    va_start(argptr, fmt);
-    vfprintf(stderr, fmt, argptr);
-    va_end(argptr);
+#else
+#define Debug(args...)
 #endif
-}

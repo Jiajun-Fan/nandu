@@ -2,17 +2,17 @@
 #include <string>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include "service.hh"
 #include "io.hh"
+#include "session.hh"
 
-class Client {
+class Client : public ServiceManager {
 public:
     Client(const std::string& host, int port);
     virtual ~Client();
-    void push(Package& package);
-    void pop(Package& package);
-    // to be overwritten in derived class
-    virtual void push_(int fd, Package* package) = 0;
-    virtual void pop_(int fd, Package* package) = 0;
+
+    void run();
+    //ReasonCode runOperation(const Operation& out);
 
 private:
     in_addr_t                   _addr;

@@ -11,15 +11,11 @@ struct RawPackageHead {
 
 class Package {
 public:
-    const unsigned char* data() const noexcept { return _data.data(); }
-    unsigned char* data() noexcept { return _data.data(); }
-    void resize(std::vector<unsigned char>::size_type size) { _data.resize(size); }
-    std::vector<unsigned char>::size_type size() const noexcept { return _data.size(); }
-    void push_back(unsigned char c) { _data.push_back(c); }
+    virtual const unsigned char* cData() const = 0;
+    virtual unsigned char* data() = 0;
+    virtual void resize(size_t size) = 0;
+    virtual size_t size() const = 0;
     virtual ~Package() {}
-    
-private:
-    std::vector<unsigned char>      _data;
 };
 
 class PackageReaderWriter {
@@ -28,6 +24,7 @@ public:
     virtual ~PackageReaderWriter();
     ReasonCode readPackage(Package& package);
     ReasonCode writePackage(const Package& package);
+
 private:
     ReasonCode read(unsigned char* buff, size_t toRead);
     ReasonCode write(const unsigned char* buff, size_t toWrite);
