@@ -1,24 +1,26 @@
 #include "auth.hh"
+#include <assert.h>
 #include <sstream>
 #include <iomanip>
 
 // Auth Server
-static ReasonCode AuthServerInitHandler(Session& session, const Operation& in, Operation& out) {
-    AuthServerService* service = dynamic_cast<AuthServerService*>(session.service);
-    assert(service);
-    return service->handleAuthInit(session, in, out);
+ReasonCode AuthServerService::handleOperation(OperationCode op, Session& session,
+        const Operation& in, Operation& out) {
+    switch (op) {
+    case OP_AUTH_INIT:
+        return handleAuthInit(session, in, out);
+    case OP_AUTH_HASH:
+        return handleAuthHash(session, in, out);
+    default:
+        assert(0);
+    }
+    return RC_OK;
 }
 
-static ReasonCode AuthServerHashHandler(Session& session, const Operation& in, Operation& out) {
-    AuthServerService* service = dynamic_cast<AuthServerService*>(session.service);
-    assert(service);
-    return service->handleAuthHash(session, in, out);
-}
-
-const OperationEntry AuthServerService::_entryTable[] = {
-    { OP_AUTH_INIT, AuthServerInitHandler },
-    { OP_AUTH_HASH, AuthServerHashHandler },
-    { OP_BAD_OPERATION, NULL }
+const OperationCode AuthServerService::_operations[] = {
+    OP_AUTH_INIT,
+    OP_AUTH_HASH,
+    OP_BAD_OPERATION,
 };
 
 std::string AuthServerService::generateToken() const {
@@ -87,23 +89,24 @@ onExit:
 }
 
 // Auth Client
-static ReasonCode AuthClientInitHandler(Session& session, const Operation& in, Operation& out) {
-    AuthClientService* service = dynamic_cast<AuthClientService*>(session.service);
-    assert(service);
-    return service->handleAuthInit(session, in, out);
-}
-
-static ReasonCode AuthClientOKHandler(Session& session, const Operation& in, Operation& out) {
-    AuthClientService* service = dynamic_cast<AuthClientService*>(session.service);
-    assert(service);
-    return service->handleAuthOK(session, in, out);
-}
-
-const OperationEntry AuthClientService::_entryTable[] = {
-    { OP_AUTH_INIT, AuthClientInitHandler },
-    { OP_AUTH_OK, AuthClientOKHandler },
-    { OP_BAD_OPERATION, NULL }
+const OperationCode AuthClientService::_operations[] = {
+    OP_AUTH_INIT,
+    OP_AUTH_OK,
+    OP_BAD_OPERATION,
 };
+
+ReasonCode AuthClientService::handleOperation(OperationCode op, Session& session,
+        const Operation& in, Operation& out) {
+    switch (op) {
+    case OP_AUTH_INIT:
+        return handleAuthInit(session, in, out);
+    case OP_AUTH_OK:
+        return handleAuthOK(session, in, out);
+    default:
+        assert(0);
+    }
+    return RC_OK;
+}
 
 ReasonCode AuthClientService::handleAuthInit(Session& session, const Operation& in, Operation& out) {
     if (session.curState != C_AUTH_INIT) {

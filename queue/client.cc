@@ -34,7 +34,7 @@ void Client::run() {
         return;
     }
 
-    Session session = { sockFd, C_INIT, NULL, "", false};
+    Session session = { sockFd, C_INIT, "", false};
     ReasonCode code;
     std::string doneMsg;
     Operation auth, out, in;

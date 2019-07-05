@@ -17,7 +17,6 @@ typedef enum {
 typedef struct {
     int                         fd;
     StateCode                   curState;
-    Service*                    service;
     // use Package to replace string if needed
     std::string                 data;
     bool                        send;

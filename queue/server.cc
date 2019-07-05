@@ -164,7 +164,7 @@ void Server::run() {
 ReasonCode Server::handleConnection(int fd) {
     ReasonCode code;
 
-    Session session = { fd, S_INIT, NULL, "", false };
+    Session session = { fd, S_INIT, "", false };
     Operation in, out;
     std::string doneMsg;
     in.setOpCode(OP_AUTH_INIT);
