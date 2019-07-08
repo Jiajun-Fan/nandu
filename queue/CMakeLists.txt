@@ -3,6 +3,7 @@ project (queue)
 
 file (GLOB SERVER_SRC "server/*.cc")
 file (GLOB CLIENT_SRC "client/*.cc")
+file (GLOB TEST_SRC "test/main.cc")
 file (GLOB COMMON_SRC "*.cc")
 
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
@@ -17,3 +18,6 @@ target_link_libraries(nandu_server ${LIB_OPENSSL})
 
 add_executable (nandu_client ${COMMON_SRC} ${CLIENT_SRC})
 target_link_libraries(nandu_client ${LIB_OPENSSL})
+
+add_executable (nandu_test ${COMMON_SRC} ${TEST_SRC})
+target_link_libraries(nandu_test ${LIB_OPENSSL})

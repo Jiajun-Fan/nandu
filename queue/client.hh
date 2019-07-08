@@ -5,14 +5,16 @@
 #include "service.hh"
 #include "io.hh"
 #include "session.hh"
+#include "operation.hh"
 
 class Client : public ServiceManager {
 public:
     Client(const std::string& host, int port);
     virtual ~Client();
 
-    void run();
-    //ReasonCode runOperation(const Operation& out);
+    ReasonCode start(Session& session);
+    ReasonCode run(Session& session, const Operation& operation);
+    ReasonCode end(Session& session);
 
 private:
     in_addr_t                   _addr;

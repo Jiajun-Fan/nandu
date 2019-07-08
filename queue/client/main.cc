@@ -8,7 +8,9 @@ int main() {
 #endif
     Client client("127.0.0.1", 6161);
     client.registerService(new AuthClientService("password"));
-    client.run();
+    Session session = { 0, C_INIT, "", false};
+    client.start(session);
+    client.end(session);
 
     return 0;
 }

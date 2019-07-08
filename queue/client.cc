@@ -18,7 +18,10 @@ Client::Client(const std::string& host, int port) :
 Client::~Client() {
 }
 
-void Client::run() {
+ReasonCode Client::start(Session& session) {
+    ReasonCode code;
+    std::string doneMsg;
+    Operation auth, out, in;
     int sockFd = socket(AF_INET, SOCK_STREAM, 0);
     assert(sockFd > 0);
 
@@ -30,14 +33,14 @@ void Client::run() {
     servAddr.sin_port = htons(_port);
 
     if (::connect(sockFd, (struct sockaddr*)&servAddr, sizeof(servAddr)) != 0) {
-        Error("Failed to connect to server.\n");
-        return;
+        CheckReasonCode(RC_IO_CANNOT_CONNECT);
     }
 
-    Session session = { sockFd, C_INIT, "", false};
-    ReasonCode code;
-    std::string doneMsg;
-    Operation auth, out, in;
+    session.fd = sockFd;
+    session.curState = C_INIT;
+    session.data = "";
+    session.send = false;
+
     CheckReasonCode(auth.read(sockFd));
     if (auth.opCode() != OP_AUTH_INIT) {
         Debug("opcode %d\n", auth.opCode());
@@ -54,7 +57,7 @@ void Client::run() {
             CheckReasonCode(RC_OP_UNSUPPORTED);
         }
     }
-    while (session.curState != C_DONE) {
+    while (session.curState != C_INIT) {
         CheckReasonCode(in.read(session.fd));
         if (in.opCode() == OP_DONE) {
             CheckReasonCode(Operation2String(in, doneMsg));
@@ -65,6 +68,39 @@ void Client::run() {
     }
 
 onExit:
-    close(sockFd);
+    if (code != RC_OK) {
+        close(sockFd);
+    }
+    printError(code);
+}
+
+ReasonCode Client::run(Session& session, const Operation& operation) {
+    ReasonCode code;
+    Operation in;
+    std::string doneMsg;
+    CheckReasonCode(runOperation(session, operation));
+    while (session.curState != C_INIT) {
+        CheckReasonCode(in.read(session.fd))
+        if (in.opCode() == OP_DONE) {
+            CheckReasonCode(Operation2String(in, doneMsg));
+            Debug("%s\n", doneMsg.c_str());
+            break;
+        }
+        CheckReasonCode(runOperation(session, in));
+    }
+onExit:
+    if (code != RC_OK) {
+        close(session.fd);
+    }
+    printError(code);
+}
+
+ReasonCode Client::end(Session& session) {
+    ReasonCode code;
+    Operation out;
+    out.setOpCode(OP_DONE);
+    CheckReasonCode(out.write(session.fd));
+onExit:
+    close(session.fd);
     printError(code);
 }

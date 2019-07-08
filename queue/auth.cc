@@ -71,11 +71,11 @@ ReasonCode AuthServerService::handleAuthHash(Session& session, const Operation& 
     CheckReasonCode(Operation2String(in, hashStr));
 
     if (expectedHash == hashStr) {
-        Info("Auth OK.\n");
+        Info("S: Auth OK.\n");
         out.setOpCode(OP_AUTH_OK);
-        session.curState = S_DONE;
+        session.curState = S_INIT;
     } else {
-        Info("Auth BAD.\n");
+        Info("S: Auth BAD.\n");
         Debug("Expect hash %s.\n", expectedHash.c_str());
         Debug("Got hash %s.\n", hashStr.c_str());
         out.setOpCode(OP_DONE);
@@ -132,7 +132,7 @@ ReasonCode AuthClientService::handleAuthOK(Session& session, const Operation& in
         Debug("state %d\n", session.curState); 
         return RC_OP_WRONG_CODE;
     }
-    session.curState = C_DONE;
-    Info("Auth OK.\n");
+    session.curState = C_INIT;
+    Info("C: Auth OK.\n");
     return RC_OK;
 }

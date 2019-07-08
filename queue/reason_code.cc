@@ -4,6 +4,7 @@
 
 const char* kErrorMessageTable[] = {
     NULL,
+    "Can't connect to server.\n",
     "Got corrupted package.\n",
     "The file descriptor is already closed.\n",
     "Connection reset by peer.\n",

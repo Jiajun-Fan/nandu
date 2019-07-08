@@ -28,7 +28,10 @@ ReasonCode Operation2String(const Operation& operation, std::string& str) {
     const Package* data = operation.getCdata();
     const unsigned char* buff = data->cData();
     size_t size = data->size();
-    if (size == 0 || buff[size-1] != '\0') {
+    if (size == 0) {
+        str = "";
+        return RC_OK;
+    } else if (buff[size-1] != '\0') {
         return RC_OP_DATA_NOTSTRING;
     } else {
         str = std::string((const char*)buff);

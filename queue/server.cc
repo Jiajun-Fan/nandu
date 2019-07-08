@@ -188,5 +188,5 @@ ReasonCode Server::handleConnection(int fd) {
     }
 
 onExit:
-    return RC_OK;
+    return code;
 }

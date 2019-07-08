@@ -2,6 +2,7 @@
 #include "log.hh"
 typedef enum {
     RC_OK,
+    RC_IO_CANNOT_CONNECT,
     RC_IO_PKG_CORRUPTED,
     RC_IO_FD_CLOSED,
     RC_IO_CONN_RESET,
