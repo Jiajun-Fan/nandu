@@ -3,7 +3,16 @@
 #include <sstream>
 #include <iomanip>
 
-// Auth Server
+//  Auth Server State Machine
+//
+//                  hasAuth == true                         hash not expected
+//  S_AUTH_INIT --+------------------> S_AUTH_WAIT_HASH --+-------------------> S_DONE
+//                |                                       |
+//                |                                       | hash expected
+//                |                                       +----------------+
+//                | hasAuth == false                                       |
+//                +--------------------------------------------------------+--> S_INIT
+//
 ReasonCode AuthServerService::handleOperation(OperationCode op, Session& session,
         const Operation& in, Operation& out) {
     switch (op) {
@@ -88,7 +97,16 @@ onExit:
     return code;
 }
 
-// Auth Client
+//  Auth Client State Machine
+//
+//                  OP_AUTH_INIT (has key)                          OP_DONE
+//  C_AUTH_INIT --+------------------------> C_AUTH_WAIT_RESULT --+--------------> C_DONE
+//                |                                               |
+//                |                                               | OP_AUTH_OK
+//                |                                               +------------+
+//                | OP_AUTH_INIT (no key)                                      |
+//                +------------------------------------------------------------+-> C_INIT
+//
 const OperationCode AuthClientService::_operations[] = {
     OP_AUTH_INIT,
     OP_AUTH_OK,

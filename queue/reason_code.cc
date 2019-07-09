@@ -15,6 +15,7 @@ const char* kErrorMessageTable[] = {
     "Wrong opcode.\n",
     "Operation data is not a string.\n",
     "Double register operation handler.\n",
+    "Server closed connection.\n",
 };
 
 void printError(ReasonCode code) {

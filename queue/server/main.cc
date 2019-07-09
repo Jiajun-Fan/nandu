@@ -5,10 +5,11 @@ int main() {
 #ifndef NDEBUG
     SetLogLevel(kLogDebug);
 #endif
-    Server server(kRemoteServer, 6161);
+    Server* server = MakeServer(kRemoteServer, 6161);
 
-    server.registerService(new AuthServerService("password"));
-    server.run();
+    server->registerService(new AuthServerService("password"));
+    server->run();
 
+    delete server;
     return 0;
 }

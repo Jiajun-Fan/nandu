@@ -14,6 +14,20 @@
 #include "log.hh"
 
 const int kTimeout = 10;
+static Server* kSingletonServer = NULL;
+
+Server* MakeServer(bool local, int port) {
+    if (kSingletonServer != NULL) {
+        Fatal("Only one server is allowed!\n");
+        exit(-1);
+    }
+    kSingletonServer = new Server(local, port);
+    return kSingletonServer;
+}
+
+Server* GetServer() {
+    return kSingletonServer;
+}
 
 static void cleanUpThread(Connection* conn) {
     static std::atomic<bool> called(false);
@@ -72,6 +86,14 @@ static void* handleConnection(void* args) {
 static void TimeoutHandler(int sig, siginfo_t* info, void* uc) {
     Connection* conn = (Connection*)info->si_value.sival_ptr;
     cleanUpThread(conn);
+}
+
+static void IntruptedHandler(int sig) {
+    if (kSingletonServer != NULL) {
+        delete kSingletonServer;
+        kSingletonServer = NULL;
+    }
+    exit(-1);
 }
 
 Server::Server(bool local, int port) : 
@@ -137,12 +159,18 @@ void Server::listen() {
 }
 
 void Server::setupSignalHandler() {
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));
+    // setup SIGALRM
+    struct sigaction saAlarm;
+    memset(&saAlarm, 0, sizeof(saAlarm));
+    saAlarm.sa_sigaction = TimeoutHandler;
+    saAlarm.sa_flags = SA_SIGINFO;
+    sigaction(SIGALRM, &saAlarm, NULL);
 
-    sa.sa_sigaction = TimeoutHandler;
-    sa.sa_flags = SA_SIGINFO;
-    sigaction(SIGALRM, &sa, NULL);
+    struct sigaction saInt;
+    memset(&saInt, 0, sizeof(saInt));
+
+    saInt.sa_handler = IntruptedHandler;
+    sigaction(SIGINT, &saInt, NULL);
 }
 
 void Server::run() {
@@ -181,7 +209,6 @@ ReasonCode Server::handleConnection(int fd) {
         CheckReasonCode(in.read(session.fd));
         if (in.opCode() == OP_DONE) {
             CheckReasonCode(Operation2String(in, doneMsg));
-            Debug("%s\n", doneMsg);
             break;
         }
         CheckReasonCode(runOperation(session, in));

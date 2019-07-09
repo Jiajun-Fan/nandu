@@ -62,7 +62,7 @@ ReasonCode Client::start(Session& session) {
         if (in.opCode() == OP_DONE) {
             CheckReasonCode(Operation2String(in, doneMsg));
             Debug("%s\n", doneMsg.c_str());
-            break;
+            CheckReasonCode(RC_CLOSED_BY_SERVER);
         }
         CheckReasonCode(runOperation(session, in));
     }
@@ -84,7 +84,7 @@ ReasonCode Client::run(Session& session, const Operation& operation) {
         if (in.opCode() == OP_DONE) {
             CheckReasonCode(Operation2String(in, doneMsg));
             Debug("%s\n", doneMsg.c_str());
-            break;
+            CheckReasonCode(RC_CLOSED_BY_SERVER);
         }
         CheckReasonCode(runOperation(session, in));
     }

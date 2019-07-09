@@ -13,6 +13,7 @@ typedef enum {
     RC_OP_WRONG_CODE,
     RC_OP_DATA_NOTSTRING,
     RC_SVC_DUP_OPCODE,
+    RC_CLOSED_BY_SERVER,
 } ReasonCode;
 
 #define CheckReasonCode(p) code = p; \

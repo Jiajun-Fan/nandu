@@ -5,6 +5,11 @@
 #include "client.hh"
 #include "auth.hh"
 #include "log.hh"
+// TODO 
+// 1. Test both Server & client have auth service
+// 2. Test neither Server nor client has auth service
+// 3. Test Server has auth service, Client has not
+// 4. Test Client has auth service, Server has not
 
 static void* runServer(void* args)  {
     Server server(kRemoteServer, 6100);

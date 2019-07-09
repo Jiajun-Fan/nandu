@@ -42,3 +42,6 @@ private:
     pthread_mutex_t             _lock;
     std::vector<pthread_t>      _tids;
 };
+
+Server* MakeServer(bool local, int port);
+Server* GetServer();
