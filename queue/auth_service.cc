@@ -1,4 +1,4 @@
-#include "auth.hh"
+#include "auth_service.hh"
 #include <assert.h>
 #include <sstream>
 #include <iomanip>
@@ -58,7 +58,7 @@ ReasonCode AuthServerService::handleAuthInit(Session& session, const Operation& 
     }
     ReasonCode code;
     std::string token = generateToken();
-    CheckReasonCode(String2Operation(token, out));
+    CheckReasonCode(String2Package(token, out.getData()));
     out.setOpCode(OP_AUTH_INIT);
     session.send = true;
     session.data = token;
@@ -77,7 +77,7 @@ ReasonCode AuthServerService::handleAuthHash(Session& session, const Operation& 
     const std::string& token = session.data;
     std::string expectedHash = hash(token.c_str(), token.length());
     std::string hashStr;
-    CheckReasonCode(Operation2String(in, hashStr));
+    CheckReasonCode(Package2String(in.getCdata(), hashStr));
 
     if (expectedHash == hashStr) {
         Info("S: Auth OK.\n");
@@ -88,7 +88,7 @@ ReasonCode AuthServerService::handleAuthHash(Session& session, const Operation& 
         Debug("Expect hash %s.\n", expectedHash.c_str());
         Debug("Got hash %s.\n", hashStr.c_str());
         out.setOpCode(OP_DONE);
-        CheckReasonCode(String2Operation("Bad hash string.", out));
+        CheckReasonCode(String2Package("Bad hash string.", out.getData()));
         session.curState = S_DONE;
     }
     session.send = true;
@@ -134,9 +134,9 @@ ReasonCode AuthClientService::handleAuthInit(Session& session, const Operation& 
     ReasonCode code;
     std::string token;
     std::string hashStr;
-    CheckReasonCode(Operation2String(in, token));
+    CheckReasonCode(Package2String(in.getCdata(), token));
     hashStr = hash(token.c_str(), token.length());
-    CheckReasonCode(String2Operation(hashStr, out));
+    CheckReasonCode(String2Package(hashStr, out.getData()));
     out.setOpCode(OP_AUTH_HASH);
 
     session.curState = C_AUTH_WAIT_RESULT;

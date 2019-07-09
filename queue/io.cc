@@ -114,3 +114,24 @@ void PackageReaderWriter::printError(ReasonCode code) {
         assert(0);
     }
 }
+
+ReasonCode Package2String(const Package& package, std::string& str) {
+    const unsigned char* buff = package.cData();
+    size_t size = package.size();
+    if (size == 0) {
+        str = "";
+        return RC_OK;
+    } else if (buff[size-1] != '\0') {
+        return RC_OP_DATA_NOTSTRING;
+    } else {
+        str = std::string((const char*)buff);
+        return RC_OK;
+    }
+}
+
+ReasonCode String2Package(const std::string& str, Package& package) {
+    size_t size = str.length() + 1;
+    package.resize(size);
+    memcpy(package.data(), str.c_str(), size);
+    return RC_OK;
+}

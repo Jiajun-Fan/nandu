@@ -9,8 +9,10 @@ typedef enum {
     OP_AUTH_INIT, 
     OP_AUTH_HASH,
     OP_AUTH_OK,
-    OP_PUSH,
-    OP_POP,
+    OP_TASK_PUSH,
+    OP_TASK_POP,
+    OP_TASK_PUSH_OK,
+    OP_TASK_POP_OK,
     OP_BAD_OPERATION
 } OperationCode;
 
@@ -44,8 +46,8 @@ public:
     OperationCode opCode() const { return *_raw; }
     void setOpCode(OperationCode op) { *_raw = op; }
 
-    const Package* getCdata() const { return &_opData; }
-    Package* getData() { return &_opData; }
+    const Package& getCdata() const { return _opData; }
+    Package& getData() { return _opData; }
 
     // Package interface
     const unsigned char* cData() const { return (const unsigned char*)_raw; }
@@ -57,11 +59,15 @@ public:
     }
     size_t size() const { return sizeof(OperationCode) + _dataSize; }
 
+    Operation& operator=(const Operation& op) {
+        _raw = (OperationCode*)malloc(op.size());
+        _dataSize = op.size() - sizeof(OperationCode);
+        memcpy(_raw, op.cData(), op.size());
+    }
+
 private:
     OperationCode*              _raw;
     size_t                      _dataSize;
     OperationData               _opData;
 };
 
-extern ReasonCode Operation2String(const Operation& operation, std::string& str);
-extern ReasonCode String2Operation(const std::string& str, Operation& operation);

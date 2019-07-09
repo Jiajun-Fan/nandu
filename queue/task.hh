@@ -11,8 +11,6 @@
 
 class Task;
 
-extern ReasonCode CreateTaskFromPackage(Package& package, Task& task);
-
 class Task {
 public:
     Task() : _name("") {}
@@ -21,10 +19,10 @@ public:
     void addParam(const std::string& param) {
         _params.push_back(param);
     }
+    const std::list<std::string>& getParams() const { return _params; }
     const std::string& getName() const { return _name; }
     void setName(const std::string& name) { _name = name; }
-    ReasonCode package(Package& package);
-    void printTask();
+
     void reset() { _name = ""; _params.clear(); }
 private:
     std::string                                     _name;

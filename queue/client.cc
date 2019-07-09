@@ -46,7 +46,7 @@ ReasonCode Client::start(Session& session) {
         Debug("opcode %d\n", auth.opCode());
         CheckReasonCode(RC_OP_WRONG_CODE);
     }
-    if (auth.getData()->size() != 0) {
+    if (auth.getData().size() != 0) {
         if (hasAuth()) {
             session.curState = C_AUTH_INIT;
             CheckReasonCode(runOperation(session, auth));
@@ -60,7 +60,7 @@ ReasonCode Client::start(Session& session) {
     while (session.curState != C_INIT) {
         CheckReasonCode(in.read(session.fd));
         if (in.opCode() == OP_DONE) {
-            CheckReasonCode(Operation2String(in, doneMsg));
+            CheckReasonCode(Package2String(in.getCdata(), doneMsg));
             Debug("%s\n", doneMsg.c_str());
             CheckReasonCode(RC_SERVER_CLOSED);
         }
@@ -72,6 +72,7 @@ onExit:
         close(sockFd);
     }
     printError(code);
+    return code;
 }
 
 ReasonCode Client::run(Session& session, const Operation& operation) {
@@ -82,7 +83,7 @@ ReasonCode Client::run(Session& session, const Operation& operation) {
     while (session.curState != C_INIT) {
         CheckReasonCode(in.read(session.fd))
         if (in.opCode() == OP_DONE) {
-            CheckReasonCode(Operation2String(in, doneMsg));
+            CheckReasonCode(Package2String(in.getCdata(), doneMsg));
             Debug("%s\n", doneMsg.c_str());
             CheckReasonCode(RC_SERVER_CLOSED);
         }
@@ -93,6 +94,7 @@ onExit:
         close(session.fd);
     }
     printError(code);
+    return code;
 }
 
 ReasonCode Client::end(Session& session) {
@@ -103,4 +105,5 @@ ReasonCode Client::end(Session& session) {
 onExit:
     close(session.fd);
     printError(code);
+    return code;
 }

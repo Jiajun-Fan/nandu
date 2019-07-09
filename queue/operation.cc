@@ -24,25 +24,3 @@ size_t OperationData::size() const {
     return rawSize - sizeof(OperationCode);
 }
 
-ReasonCode Operation2String(const Operation& operation, std::string& str) {
-    const Package* data = operation.getCdata();
-    const unsigned char* buff = data->cData();
-    size_t size = data->size();
-    if (size == 0) {
-        str = "";
-        return RC_OK;
-    } else if (buff[size-1] != '\0') {
-        return RC_OP_DATA_NOTSTRING;
-    } else {
-        str = std::string((const char*)buff);
-        return RC_OK;
-    }
-}
-
-ReasonCode String2Operation(const std::string& str, Operation& operation) {
-    size_t size = str.length() + 1;
-    Package* data = operation.getData();
-    data->resize(size);
-    memcpy(data->data(), str.c_str(), size);
-    return RC_OK;
-}

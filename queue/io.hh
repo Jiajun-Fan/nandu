@@ -9,6 +9,8 @@ struct RawPackageHead {
     size_t size;
 };
 
+class Task;
+
 class Package {
 public:
     virtual const unsigned char* cData() const = 0;
@@ -31,3 +33,8 @@ private:
     void printError(ReasonCode code);
     int                             _fd;
 };
+
+extern ReasonCode Package2String(const Package& package, std::string& str);
+extern ReasonCode String2Package(const std::string& str, Package& package);
+extern ReasonCode Task2Package(const Task& task, Package& package);
+extern ReasonCode Package2Task(const Package& package, Task& task);

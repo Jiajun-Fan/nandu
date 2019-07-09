@@ -33,13 +33,13 @@ static ReasonCode writeString(unsigned char* buff, unsigned char*& ptr, std::str
     return RC_OK;
 }
 
-ReasonCode CreateTaskFromPackage(Package& package, Task& task) {
+ReasonCode Package2Task(const Package& package, Task& task) {
 
     task.reset();
 
     std::string name;
 
-    unsigned char* ptr = package.data();
+    unsigned char* ptr = (unsigned char*)package.cData();
     ReasonCode code;
     size_t nbParam = 0;
     CheckReasonCode(readString(ptr, ptr, name));
@@ -61,42 +61,35 @@ onExit:
     return code;
 }
 
-ReasonCode Task::package(Package& package) {
+ReasonCode Task2Package(const Task& task, Package& package) {
     ReasonCode code;
 
     // size of name
-    size_t totalSize = _name.length() + 1;
+    size_t totalSize = task.getName().length() + 1;
     unsigned char* ptr = NULL;
 
     // number of parameters 
-    if (_params.size() > kTaskMaxParamNum) {
+    if (task.getParams().size() > kTaskMaxParamNum) {
         CheckReasonCode(RC_TSK_TOOMANY_PARAMS);
     }
     totalSize += sizeof(size_t);
 
-    for (auto it = _params.begin(); it != _params.end(); it++) {
+    for (auto it = task.getParams().begin();
+            it != task.getParams().end(); it++) {
         totalSize += (it->length() + 1);
     }
     package.resize(totalSize);
 
     ptr = package.data();
-    CheckReasonCode(writeString(ptr, ptr, _name));
-    *(size_t*)(ptr) = _params.size();
+    CheckReasonCode(writeString(ptr, ptr, task.getName()));
+    *(size_t*)(ptr) = task.getParams().size();
     ptr += sizeof(size_t);
 
-    for (auto it = _params.begin(); it != _params.end(); it++) {
+    for (auto it = task.getParams().begin();
+            it != task.getParams().end(); it++) {
         CheckReasonCode(writeString(ptr, ptr, *it));
     }
 
 onExit:
     return code;
-}
-
-void Task::printTask() {
-    std::stringstream ss;
-    ss << _name << " ";
-    for (auto it = _params.begin(); it != _params.end(); it++) {
-        ss << *it << " ";
-    }
-    Info("%s\n", ss.str().c_str());
 }

@@ -208,7 +208,7 @@ ReasonCode Server::handleConnection(int fd) {
     while (session.curState != S_DONE) {
         CheckReasonCode(in.read(session.fd));
         if (in.opCode() == OP_DONE) {
-            CheckReasonCode(Operation2String(in, doneMsg));
+            CheckReasonCode(Package2String(in.getCdata(), doneMsg));
             break;
         }
         CheckReasonCode(runOperation(session, in));
