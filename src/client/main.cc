@@ -12,21 +12,19 @@ int main() {
     client.registerService(new AuthClientService("password"));
     client.registerService(new TaskClientService());
     Session session = { 0, C_INIT, "", false};
-    ReasonCode code;
+    ReasonCode code = RC_OK;
 
     Task task("fuck");
-    Operation opPush;
-    Operation opPop;
-    opPush.setOpCode(OP_TASK_PUSH);
-    opPop.setOpCode(OP_TASK_POP);
-    CheckReasonCode(Task2Package(task, opPush.getData()));
-    CheckReasonCode(client.start(session));
-    CheckReasonCode(client.run(session, opPush));
-    CheckReasonCode(client.run(session, opPop));
-    CheckReasonCode(client.run(session, opPop));
+    Operation opPush(OP_TASK_PUSH);
 
-    client.end(session);
+    do {
+        code = Task2Package(Task("fuck"), opPush.getData());
+        code = client.start(session);
+        code = client.run(session, opPush);
+        code = client.run(session, Operation(OP_TASK_POP));
+        code = client.run(session, Operation(OP_TASK_POP));
+        code = client.end(session);
+    } while(0);
 
-onExit:
     return 0;
 }

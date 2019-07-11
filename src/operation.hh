@@ -33,6 +33,10 @@ private:
 
 class Operation : public Package {
 public:
+    explicit Operation(const OperationCode code) : _dataSize(0), _opData(this) {
+        _raw = (OperationCode*)malloc(sizeof(OperationCode));
+        *_raw = code;
+    }
     Operation() : _dataSize(0), _opData(this) {
         _raw = (OperationCode*)malloc(sizeof(OperationCode));
         *_raw = OP_BAD_OPERATION;
