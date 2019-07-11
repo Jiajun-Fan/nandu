@@ -12,11 +12,12 @@ public:
     Client(const std::string& host, int port);
     virtual ~Client();
 
-    ReasonCode start(Session& session);
-    ReasonCode run(Session& session, const Operation& operation);
-    ReasonCode end(Session& session);
+    Session start();
+    void run(Session& session, const Operation& operation);
+    void end(Session& session);
 
 private:
+    int connect();
     in_addr_t                   _addr;
     int                         _port;
 };

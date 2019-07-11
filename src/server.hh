@@ -26,7 +26,7 @@ public:
     Server(bool local, int port);
     virtual ~Server();
     void run();
-    ReasonCode handleConnection(int fd);
+    void handleConnection(int fd);
     void addThreadToBeJoin(const pthread_t& tid);
 
 private:

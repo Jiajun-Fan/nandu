@@ -11,6 +11,7 @@
 #include <string.h>
 #include <atomic>
 #include <iostream>
+#include "exception.hh"
 #include "log.hh"
 
 const int kTimeout = 10;
@@ -72,10 +73,11 @@ static void* handleConnection(void* args) {
     setupThread(conn);
 
     // run the handler
-    ReasonCode code = conn->server->handleConnection(conn->fd);
-
-    // print error if any
-    printError(code);
+    try {
+        conn->server->handleConnection(conn->fd);
+    } catch (Exception e) {
+        Error("%s\n", e.what());
+    }
 
     // free resource
     cleanUpThread(conn);
@@ -189,31 +191,25 @@ void Server::run() {
     }
 }
 
-ReasonCode Server::handleConnection(int fd) {
-    ReasonCode code;
+void Server::handleConnection(int fd) {
 
     Session session = { fd, S_INIT, "", false };
-    Operation in, out;
-    std::string doneMsg;
-    in.setOpCode(OP_AUTH_INIT);
 
     if (needAuth()) {
         session.curState = S_AUTH_INIT;
-        CheckReasonCode(runOperation(session, in));
+        runOperation(session, Operation(OP_AUTH_INIT));
     } else {
-        out.setOpCode(OP_AUTH_INIT);
-        CheckReasonCode(out.write(session.fd));
+        Operation(OP_AUTH_INIT).write(session.fd);
     }
 
     while (session.curState != S_DONE) {
-        CheckReasonCode(in.read(session.fd));
+        Operation in;
+        std::string doneMsg;
+        in.read(session.fd);
         if (in.opCode() == OP_DONE) {
-            CheckReasonCode(Package2String(in.getCdata(), doneMsg));
+            Package2String(in.getCdata(), doneMsg);
             break;
         }
-        CheckReasonCode(runOperation(session, in));
+        runOperation(session, in);
     }
-
-onExit:
-    return code;
 }

@@ -2,7 +2,6 @@
 #include <sys/types.h>
 #include <vector>
 #include <string>
-#include "reason_code.hh"
 
 struct RawPackageHead {
     char magic[5];
@@ -24,17 +23,16 @@ class PackageReaderWriter {
 public:
     explicit PackageReaderWriter(int fd);
     virtual ~PackageReaderWriter();
-    ReasonCode readPackage(Package& package);
-    ReasonCode writePackage(const Package& package);
+    void readPackage(Package& package);
+    void writePackage(const Package& package);
 
 private:
-    ReasonCode read(unsigned char* buff, size_t toRead);
-    ReasonCode write(const unsigned char* buff, size_t toWrite);
-    void printError(ReasonCode code);
+    void read(unsigned char* buff, size_t toRead);
+    void write(const unsigned char* buff, size_t toWrite);
     int                             _fd;
 };
 
-extern ReasonCode Package2String(const Package& package, std::string& str);
-extern ReasonCode String2Package(const std::string& str, Package& package);
-extern ReasonCode Task2Package(const Task& task, Package& package);
-extern ReasonCode Package2Task(const Package& package, Task& task);
+extern void Package2String(const Package& package, std::string& str);
+extern void String2Package(const std::string& str, Package& package);
+extern void Task2Package(const Task& task, Package& package);
+extern void Package2Task(const Package& package, Task& task);

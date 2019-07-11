@@ -4,7 +4,6 @@
 #include <string>
 #include <list>
 #include "io.hh"
-#include "reason_code.hh"
 
 #define kTaskMaxStringLength PATH_MAX
 #define kTaskMaxParamNum PATH_MAX

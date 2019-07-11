@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "log.hh"
+#include "exception.hh"
 
 Client::Client(const std::string& host, int port) :
                 _port(port) {
@@ -18,10 +19,7 @@ Client::Client(const std::string& host, int port) :
 Client::~Client() {
 }
 
-ReasonCode Client::start(Session& session) {
-    ReasonCode code;
-    std::string doneMsg;
-    Operation auth, out, in;
+int Client::connect() {
     int sockFd = socket(AF_INET, SOCK_STREAM, 0);
     assert(sockFd > 0);
 
@@ -33,77 +31,66 @@ ReasonCode Client::start(Session& session) {
     servAddr.sin_port = htons(_port);
 
     if (::connect(sockFd, (struct sockaddr*)&servAddr, sizeof(servAddr)) != 0) {
-        CheckReasonCode(RC_IO_CANNOT_CONNECT);
+        throw Exception(RC_IO_CANNOT_CONNECT);
     }
+    return sockFd;
+}
 
-    session.fd = sockFd;
-    session.curState = C_INIT;
-    session.data = "";
-    session.send = false;
+Session Client::start() {
 
-    CheckReasonCode(auth.read(sockFd));
+    Session session = { this->connect(), C_INIT, "", false };
+
+    Operation auth;
+    auth.read(session.fd);
+
     if (auth.opCode() != OP_AUTH_INIT) {
         Debug("opcode %d\n", auth.opCode());
-        CheckReasonCode(RC_OP_WRONG_CODE);
+        throw Exception(RC_OP_WRONG_CODE);
     }
+
     if (auth.getData().size() != 0) {
         if (hasAuth()) {
             session.curState = C_AUTH_INIT;
-            CheckReasonCode(runOperation(session, auth));
+            runOperation(session, auth);
         } else {
-            out.setOpCode(OP_DONE);
-            CheckReasonCode(out.write(sockFd));
+            // not able to auth, abort
+            Operation(OP_DONE).write(session.fd);
             Debug("opcode %d\n", auth.opCode());
-            CheckReasonCode(RC_OP_UNSUPPORTED);
+            throw Exception(RC_OP_UNSUPPORTED);
         }
-    }
-    while (session.curState != C_INIT) {
-        CheckReasonCode(in.read(session.fd));
-        if (in.opCode() == OP_DONE) {
-            CheckReasonCode(Package2String(in.getCdata(), doneMsg));
-            Debug("%s\n", doneMsg.c_str());
-            CheckReasonCode(RC_SERVER_CLOSED);
-        }
-        CheckReasonCode(runOperation(session, in));
     }
 
-onExit:
-    if (code != RC_OK) {
-        close(sockFd);
+    while (session.curState != C_INIT) {
+        Operation in;
+        in.read(session.fd);
+        if (in.opCode() == OP_DONE) {
+            std::string doneMsg;
+            Package2String(in.getCdata(), doneMsg);
+            Debug("%s\n", doneMsg.c_str());
+            throw Exception(RC_SERVER_CLOSED);
+        }
+        runOperation(session, in);
     }
-    printError(code);
-    return code;
+
+    return session;
 }
 
-ReasonCode Client::run(Session& session, const Operation& operation) {
-    ReasonCode code;
-    Operation in;
-    std::string doneMsg;
-    CheckReasonCode(runOperation(session, operation));
+void Client::run(Session& session, const Operation& operation) {
+    runOperation(session, operation);
     while (session.curState != C_INIT) {
-        CheckReasonCode(in.read(session.fd))
+        Operation in;
+        in.read(session.fd);
         if (in.opCode() == OP_DONE) {
-            CheckReasonCode(Package2String(in.getCdata(), doneMsg));
+            std::string doneMsg;
+            Package2String(in.getCdata(), doneMsg);
             Debug("%s\n", doneMsg.c_str());
-            CheckReasonCode(RC_SERVER_CLOSED);
+            throw Exception(RC_SERVER_CLOSED);
         }
-        CheckReasonCode(runOperation(session, in));
+        runOperation(session, in);
     }
-onExit:
-    if (code != RC_OK) {
-        close(session.fd);
-    }
-    printError(code);
-    return code;
 }
 
-ReasonCode Client::end(Session& session) {
-    ReasonCode code;
-    Operation out;
-    out.setOpCode(OP_DONE);
-    CheckReasonCode(out.write(session.fd));
-onExit:
+void Client::end(Session& session) {
+    Operation(OP_DONE).write(session.fd);
     close(session.fd);
-    printError(code);
-    return code;
 }

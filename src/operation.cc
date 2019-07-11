@@ -1,12 +1,12 @@
 #include "operation.hh"
 #include <string.h>
 
-ReasonCode Operation::read(int fd) {
-    return PackageReaderWriter(fd).readPackage(*this);
+void Operation::read(int fd) {
+    PackageReaderWriter(fd).readPackage(*this);
 }
 
-ReasonCode Operation::write(int fd) {
-    return PackageReaderWriter(fd).writePackage(*this);
+void Operation::write(int fd) {
+    PackageReaderWriter(fd).writePackage(*this);
 }
 
 const unsigned char* OperationData::cData() const {

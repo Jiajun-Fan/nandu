@@ -44,8 +44,8 @@ public:
     virtual ~Operation() {
         free(_raw);
     }
-    ReasonCode read(int fd);
-    ReasonCode write(int fd);
+    void read(int fd);
+    void write(int fd);
 
     OperationCode opCode() const { return *_raw; }
     void setOpCode(OperationCode op) { *_raw = op; }

@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <sstream>
 #include <iomanip>
+#include "log.hh"
+#include "exception.hh"
 
 //  Auth Server State Machine
 //
@@ -13,17 +15,18 @@
 //                | hasAuth == false                                       |
 //                +--------------------------------------------------------+--> S_INIT
 //
-ReasonCode AuthServerService::handleOperation(OperationCode op, Session& session,
+void AuthServerService::handleOperation(OperationCode op, Session& session,
         const Operation& in, Operation& out) {
     switch (op) {
     case OP_AUTH_INIT:
-        return handleAuthInit(session, in, out);
+        handleAuthInit(session, in, out);
+        break;
     case OP_AUTH_HASH:
-        return handleAuthHash(session, in, out);
+        handleAuthHash(session, in, out);
+        break;
     default:
         assert(0);
     }
-    return RC_OK;
 }
 
 const OperationCode AuthServerService::_operations[] = {
@@ -51,33 +54,28 @@ std::string AuthServerService::generateToken() const {
     return ss.str();
 }
 
-ReasonCode AuthServerService::handleAuthInit(Session& session, const Operation& in, Operation& out) {
+void AuthServerService::handleAuthInit(Session& session, const Operation& in, Operation& out) {
     if (session.curState != S_AUTH_INIT) {
         Debug("state %d\n", session.curState); 
-        return RC_OP_WRONG_CODE;
+        throw Exception(RC_OP_WRONG_CODE);
     }
-    ReasonCode code;
     std::string token = generateToken();
-    CheckReasonCode(String2Package(token, out.getData()));
+    String2Package(token, out.getData());
     out.setOpCode(OP_AUTH_INIT);
     session.send = true;
     session.data = token;
     session.curState = S_AUTH_WAIT_HASH;
-
-onExit:
-    return code;
 };
 
-ReasonCode AuthServerService::handleAuthHash(Session& session, const Operation& in, Operation& out) {
+void AuthServerService::handleAuthHash(Session& session, const Operation& in, Operation& out) {
     if (session.curState != S_AUTH_WAIT_HASH) {
         Debug("state %d\n", session.curState); 
-        return RC_OP_WRONG_CODE;
+        throw Exception(RC_OP_WRONG_CODE);
     }
-    ReasonCode code;
     const std::string& token = session.data;
     std::string expectedHash = hash(token.c_str(), token.length());
     std::string hashStr;
-    CheckReasonCode(Package2String(in.getCdata(), hashStr));
+    Package2String(in.getCdata(), hashStr);
 
     if (expectedHash == hashStr) {
         Info("S: Auth OK.\n");
@@ -88,13 +86,10 @@ ReasonCode AuthServerService::handleAuthHash(Session& session, const Operation& 
         Debug("Expect hash %s.\n", expectedHash.c_str());
         Debug("Got hash %s.\n", hashStr.c_str());
         out.setOpCode(OP_DONE);
-        CheckReasonCode(String2Package("Bad hash string.", out.getData()));
+        String2Package("Bad hash string.", out.getData());
         session.curState = S_DONE;
     }
     session.send = true;
-
-onExit:
-    return code;
 }
 
 //  Auth Client State Machine
@@ -113,44 +108,41 @@ const OperationCode AuthClientService::_operations[] = {
     OP_BAD_OPERATION,
 };
 
-ReasonCode AuthClientService::handleOperation(OperationCode op, Session& session,
+void AuthClientService::handleOperation(OperationCode op, Session& session,
         const Operation& in, Operation& out) {
     switch (op) {
     case OP_AUTH_INIT:
-        return handleAuthInit(session, in, out);
+        handleAuthInit(session, in, out);
+        break;
     case OP_AUTH_OK:
-        return handleAuthOK(session, in, out);
+        handleAuthOK(session, in, out);
+        break;
     default:
         assert(0);
     }
-    return RC_OK;
 }
 
-ReasonCode AuthClientService::handleAuthInit(Session& session, const Operation& in, Operation& out) {
+void AuthClientService::handleAuthInit(Session& session, const Operation& in, Operation& out) {
     if (session.curState != C_AUTH_INIT) {
         Debug("state %d\n", session.curState); 
-        return RC_OP_WRONG_CODE;
+        throw Exception(RC_OP_WRONG_CODE);
     }
-    ReasonCode code;
     std::string token;
     std::string hashStr;
-    CheckReasonCode(Package2String(in.getCdata(), token));
+    Package2String(in.getCdata(), token);
     hashStr = hash(token.c_str(), token.length());
-    CheckReasonCode(String2Package(hashStr, out.getData()));
+    String2Package(hashStr, out.getData());
     out.setOpCode(OP_AUTH_HASH);
 
     session.curState = C_AUTH_WAIT_RESULT;
     session.send = true;
-onExit:
-    return code;
 }
 
-ReasonCode AuthClientService::handleAuthOK(Session& session, const Operation& in, Operation& out) {
+void AuthClientService::handleAuthOK(Session& session, const Operation& in, Operation& out) {
     if (session.curState != C_AUTH_WAIT_RESULT) {
         Debug("state %d\n", session.curState); 
-        return RC_OP_WRONG_CODE;
+        throw Exception(RC_OP_WRONG_CODE);
     }
     session.curState = C_INIT;
     Info("C: Auth OK.\n");
-    return RC_OK;
 }
