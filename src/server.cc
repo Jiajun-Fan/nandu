@@ -11,6 +11,7 @@
 #include <string.h>
 #include <atomic>
 #include <iostream>
+#include "auth_service.hh"
 #include "exception.hh"
 #include "log.hh"
 
@@ -193,21 +194,20 @@ void Server::run() {
 
 void Server::handleConnection(int fd) {
 
-    Session session = { fd, S_INIT, "", false };
+    Session session = { fd, SC_INIT, "" };
 
     if (needAuth()) {
-        session.curState = S_AUTH_INIT;
-        runOperation(session, Operation(OP_AUTH_INIT));
+        session.curState = SC_AUTH_INIT;
+        runOperation(session, Operation(SVC_AUTH, SUB_AUTH_INIT));
     } else {
-        Operation(OP_AUTH_INIT).write(session.fd);
+        Operation(SVC_AUTH, SUB_AUTH_INIT).write(session.fd);
     }
 
-    while (session.curState != S_DONE) {
+    while (session.curState != SC_DONE) {
         Operation in;
-        std::string doneMsg;
         in.read(session.fd);
-        if (in.opCode() == OP_DONE) {
-            Package2String(in.getCdata(), doneMsg);
+        if (in.opCode().getOpCode() == OP_DONE) {
+            //Debug("%s\n", in.toString().c_str());
             break;
         }
         runOperation(session, in);

@@ -5,7 +5,7 @@ void Operation::read(int fd) {
     PackageReaderWriter(fd).readPackage(*this);
 }
 
-void Operation::write(int fd) {
+void Operation::write(int fd) const {
     PackageReaderWriter(fd).writePackage(*this);
 }
 

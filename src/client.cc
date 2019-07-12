@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include "auth_service.hh"
 #include "log.hh"
 #include "exception.hh"
 
@@ -38,19 +39,20 @@ int Client::connect() {
 
 Session Client::start() {
 
-    Session session = { this->connect(), C_INIT, "", false };
+    Session session = { this->connect(), SC_INIT, "" };
 
     Operation auth;
     auth.read(session.fd);
 
-    if (auth.opCode() != OP_AUTH_INIT) {
+    // FIXME
+    if (auth.opCode().getOpCode() != OperationCode(SVC_AUTH, SUB_AUTH_INIT).getOpCode()) {
         Debug("opcode %d\n", auth.opCode());
         throw Exception(RC_OP_WRONG_CODE);
     }
 
     if (auth.getData().size() != 0) {
         if (hasAuth()) {
-            session.curState = C_AUTH_INIT;
+            session.curState = SC_INIT;
             runOperation(session, auth);
         } else {
             // not able to auth, abort
@@ -60,13 +62,11 @@ Session Client::start() {
         }
     }
 
-    while (session.curState != C_INIT) {
+    while (session.curState != SC_INIT) {
         Operation in;
         in.read(session.fd);
-        if (in.opCode() == OP_DONE) {
-            std::string doneMsg;
-            Package2String(in.getCdata(), doneMsg);
-            Debug("%s\n", doneMsg.c_str());
+        if (in.opCode().getOpCode() == OP_DONE) {
+            Debug("%s\n", in.toString().c_str());
             throw Exception(RC_SERVER_CLOSED);
         }
         runOperation(session, in);
@@ -77,13 +77,11 @@ Session Client::start() {
 
 void Client::run(Session& session, const Operation& operation) {
     runOperation(session, operation);
-    while (session.curState != C_INIT) {
+    while (session.curState != SC_INIT) {
         Operation in;
         in.read(session.fd);
-        if (in.opCode() == OP_DONE) {
-            std::string doneMsg;
-            Package2String(in.getCdata(), doneMsg);
-            Debug("%s\n", doneMsg.c_str());
+        if (in.opCode().getOpCode() == OP_DONE) {
+            Debug("%s\n", in.toString().c_str());
             throw Exception(RC_SERVER_CLOSED);
         }
         runOperation(session, in);

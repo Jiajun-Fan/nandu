@@ -3,7 +3,6 @@
 #include <limits.h>
 #include <string>
 #include <list>
-#include "io.hh"
 
 #define kTaskMaxStringLength PATH_MAX
 #define kTaskMaxParamNum PATH_MAX

@@ -13,17 +13,17 @@ int main() {
     Client client("127.0.0.1", 6161);
     client.registerService(new AuthClientService("password"));
     client.registerService(new TaskClientService());
-    Session session = { 0, C_INIT, "", false};
+    Session session = { 0, SC_INIT, ""};
 
     Task task("fuck");
-    Operation opPush(OP_TASK_PUSH);
 
     try {
-        Task2Package(Task("fuck"), opPush.getData());
+        Operation opPush(SVC_TASK, SUB_TASK_PUSH);
+        opPush.fromTask(Task("fuck"));
         session = client.start();
         client.run(session, opPush);
-        client.run(session, Operation(OP_TASK_POP));
-        client.run(session, Operation(OP_TASK_POP));
+        client.run(session, Operation(SVC_TASK, SUB_TASK_POP));
+        client.run(session, Operation(SVC_TASK, SUB_TASK_POP));
         client.end(session);
     } catch (Exception e) {
         if (session.fd != 0) {

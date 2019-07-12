@@ -3,37 +3,46 @@
 #include "exception.hh"
 
 ServiceManager::~ServiceManager() {
-    for (auto it = _services.begin(); it != _services.end(); it++) {
-        delete *it;
+    for (auto it = _servicesMap.begin(); it != _servicesMap.end(); it++) {
+        delete it->second;
     }
 };
 
 void ServiceManager::registerService(Service* service) {
-    const OperationCode* code = service->getOperations();
-    while (*code != OP_BAD_OPERATION) {
-        auto it = _servicesMap.find(*code);
-        if (it != _servicesMap.end()) {
-            throw Exception(RC_SVC_DUP_OPCODE);
-        }
-        _servicesMap[*code] = service;
-        code++;
+    int code = service->getServiceCode();
+    auto it = _servicesMap.find(code);
+
+    if (it != _servicesMap.end()) {
+        throw Exception(RC_SVC_DUP_OPCODE);
     }
+    _servicesMap[code] = service;
 }
 
-void ServiceManager::runOperation(Session& session, const Operation& in) {
-    Operation out;
+void ServiceManager::runOperation(Session& session, const Operation& op) {
 
-    auto sit = _servicesMap.find(in.opCode());
+    OperationCode opCode = op.opCode();
+    auto sit = _servicesMap.find(opCode.getSvcCode());
     if (sit == _servicesMap.end()) {
-        Debug("opcode %d\n", in.opCode());
+        Debug("bad service %d\n", opCode.getSvcCode());
         throw Exception(RC_OP_UNSUPPORTED);
     }
-    assert(sit != _servicesMap.end());
-    sit->second->handleOperation(in.opCode(), session, in, out);
 
-    if (session.send) {
-        out.write(session.fd);
+    Service* service = sit->second;
+    const Service::EntryMap& entryMap = service->getEntryMap();
+    const Service::EntryMap::const_iterator eit = entryMap.find(opCode.getOpCode());
+    if (eit == entryMap.end()) {
+        Debug("service %d, bad operation %d\n",
+                opCode.getSvcCode(), opCode.getOpCode());
+        throw Exception(RC_OP_UNSUPPORTED);
     }
-    // reset send, since send is not cleared by operation handler
-    session.send = false;
+
+    const Service::OperationEntry& entry = eit->second;
+    if (session.curState != entry.expected) {
+        Debug("service %d, operation %d, bad state %d\n",
+                opCode.getSvcCode(), opCode.getOpCode(),
+                session.curState);
+        throw Exception(RC_OP_WRONG_CODE);
+    }
+
+    entry.hd(service, session, op);
 }

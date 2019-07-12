@@ -3,35 +3,38 @@
 #include "hasher.hh"
 #include "service.hh"
 
+enum {
+    SUB_AUTH_INIT,
+    SUB_AUTH_HASH,
+    SUB_AUTH_OK,
+};
+
 class AuthServerService : public Service, public Hasher {
 public:
-    virtual void handleOperation(OperationCode op, Session& session,
-                           const Operation& in, Operation& out);
+    int getServiceCode() const { return SVC_AUTH; }
+    virtual const EntryMap& getEntryMap() const { return _entryMap; }
 
-    explicit AuthServerService(const std::string& key) : 
-        Hasher(key) {}
+    explicit AuthServerService(const std::string& key);
     virtual ~AuthServerService() {}
-    virtual const OperationCode* getOperations() const { return _operations; }
 private:
     std::string generateToken() const;
-    void handleAuthInit(Session& session, const Operation& in, Operation& out);
-    void handleAuthHash(Session& session, const Operation& in, Operation& out);
+    static void handleAuthInit(Service* service, Session& session, const Operation& in);
+    static void handleAuthHash(Service* service, Session& session, const Operation& in);
 
-    static const OperationCode _operations[];
+    EntryMap                            _entryMap;
 };
 
 class AuthClientService : public Service, public Hasher {
 public:
-    virtual void handleOperation(OperationCode op, Session& session,
-                           const Operation& in, Operation& out);
+    int getServiceCode() const { return SVC_AUTH; }
+    virtual const EntryMap& getEntryMap() const { return _entryMap; }
 
-    explicit AuthClientService(const std::string& key) : 
-        Hasher(key) {}
+    explicit AuthClientService(const std::string& key);
     virtual ~AuthClientService() {}
-    virtual const OperationCode* getOperations() const { return _operations; }
-private:
-    void handleAuthInit(Session& session, const Operation& in, Operation& out);
-    void handleAuthOK(Session& session, const Operation& in, Operation& out);
 
-    static const OperationCode _operations[];
+private:
+    static void handleAuthInit(Service* service, Session& session, const Operation& in);
+    static void handleAuthOK(Service* service, Session& session, const Operation& in);
+
+    EntryMap                            _entryMap;
 };

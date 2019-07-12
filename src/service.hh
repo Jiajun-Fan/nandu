@@ -3,12 +3,27 @@
 #include <vector>
 #include "session.hh"
 #include "operation.hh"
+#include "session.hh"
 
 class Service {
 public:
-    virtual const OperationCode* getOperations() const = 0;
-    virtual void handleOperation(OperationCode op, Session& session,
-                           const Operation& in, Operation& out) = 0;
+
+    typedef void (*OperationHandler)(Service* service, Session& session, const Operation& in);
+    class OperationEntry {
+    public:
+        OperationEntry() : hd(NULL), expected(0) {}
+        OperationEntry(OperationHandler hd_, int expected_) :
+                        hd(hd_), expected(expected_) {
+        }
+        OperationHandler hd;
+        int expected;
+    };
+
+    typedef std::map<int, OperationEntry> EntryMap;
+
+    virtual int getServiceCode() const = 0;
+    virtual const EntryMap& getEntryMap() const = 0;
+
     Service() {}
     virtual ~Service() {}
 };
@@ -20,12 +35,11 @@ public:
     void registerService(Service* service);
     void runOperation(Session& session, const Operation& op);
     bool needAuth() const {
-        return _servicesMap.find(OP_AUTH_INIT) != _servicesMap.end();
+        return _servicesMap.find(SVC_AUTH) != _servicesMap.end();
     }
     bool hasAuth() const {
-        return _servicesMap.find(OP_AUTH_INIT) != _servicesMap.end();
+        return _servicesMap.find(SVC_AUTH) != _servicesMap.end();
     }
 private:
-    std::vector<Service*>                           _services;
-    std::map<OperationCode, Service*>               _servicesMap;
+    std::map<int, Service*>                       _servicesMap;
 };

@@ -1,113 +1,68 @@
 #include "task_service.hh"
+#include <assert.h>
 #include "log.hh"
 #include "exception.hh"
-void TaskServerService::handleOperation(OperationCode op, Session& session,
-        const Operation& in, Operation& out) {
-    switch (op) {
-    case OP_TASK_PUSH:
-        handleTaskPush(session, in, out);
-        break;
-    case OP_TASK_POP:
-        handleTaskPop(session, in, out);
-        break;
-    default:
-        assert(0);
-    }
-}
 
-const OperationCode TaskServerService::_operations[] = {
-    OP_TASK_PUSH,
-    OP_TASK_POP,
-    OP_BAD_OPERATION,
+enum {
+    SC_TASK_PUSH_WAIT_OK,
+    SC_TASK_POP_WAIT_OK,
 };
 
-void TaskServerService::handleTaskPush(Session& session, const Operation& in, Operation& out) {
-    if (session.curState != S_INIT) {
-        Debug("state %d\n", session.curState); 
-        throw Exception(RC_OP_WRONG_CODE);
-    }
+static const OperationCode kOperationTaskPush(SVC_TASK, SUB_TASK_PUSH);
+static const OperationCode kOperationTaskPop(SVC_TASK, SUB_TASK_POP);
+static const OperationCode kOperationTaskPushOK(SVC_TASK, SUB_TASK_PUSH_OK);
+static const OperationCode kOperationTaskPopOK(SVC_TASK, SUB_TASK_POP_OK);
 
-    Task task;
-    Package2Task(in.getCdata(), task);
-    pushTask((uint32_t)time(NULL), task);
-    out.setOpCode(OP_TASK_PUSH_OK);
-    session.send = true;
+TaskServerService::TaskServerService() {
+    _entryMap[kOperationTaskPush.getOpCode()] = OperationEntry(handleTaskPush, SC_INIT);
+    _entryMap[kOperationTaskPop.getOpCode()] = OperationEntry(handleTaskPop, SC_INIT);
+}
+
+void TaskServerService::handleTaskPush(Service* service, Session& session, const Operation& in) {
+    TaskServerService* svc = dynamic_cast<TaskServerService*>(service);
+    assert(svc);
+
+    Task task = in.toTask();
+    svc->pushTask((uint32_t)time(NULL), task);
+    Operation(kOperationTaskPushOK).write(session.fd);
     Info("S: Push task \"%s\".\n", task.getName().c_str());
 };
 
-void TaskServerService::handleTaskPop(Session& session, const Operation& in, Operation& out) {
-    if (session.curState != S_INIT) {
-        Debug("state %d\n", session.curState); 
-        throw Exception(RC_OP_WRONG_CODE);
-    }
+void TaskServerService::handleTaskPop(Service* service, Session& session, const Operation& in) {
+    TaskServerService* svc = dynamic_cast<TaskServerService*>(service);
+    assert(svc);
 
-    Task task = popTask();
-    Task2Package(task, out.getData());
-    out.setOpCode(OP_TASK_POP_OK);
-    session.send = true;
+    Task task = svc->popTask();
+    Operation out(kOperationTaskPushOK);
+    out.fromTask(task);
+    out.write(session.fd);
     Info("S: Pop task \"%s\".\n", task.getName().c_str());
+    // no need to update session.curState, since it's still SC_INIT
 };
 
-void TaskClientService::handleOperation(OperationCode op, Session& session,
-        const Operation& in, Operation& out) {
-    switch (op) {
-    case OP_TASK_PUSH:
-    case OP_TASK_POP:
-        handleTaskPushPop(session, in, out);
-        break;
-    case OP_TASK_PUSH_OK:
-        handleTaskPushOK(session, in, out);
-        break;
-    case OP_TASK_POP_OK:
-        handleTaskPopOK(session, in, out);
-        break;
-    default:
-        assert(0);
-    }
+TaskClientService::TaskClientService() {
+    _entryMap[kOperationTaskPush.getOpCode()] = OperationEntry(handleTaskPushPop, SC_INIT);
+    _entryMap[kOperationTaskPop.getOpCode()] = OperationEntry(handleTaskPushPop, SC_INIT);
+    _entryMap[kOperationTaskPushOK.getOpCode()] = OperationEntry(handleTaskPushOK, SC_TASK_PUSH_WAIT_OK);
+    _entryMap[kOperationTaskPopOK.getOpCode()] = OperationEntry(handleTaskPopOK, SC_TASK_POP_WAIT_OK);
 }
 
-const OperationCode TaskClientService::_operations[] = {
-    OP_TASK_PUSH,
-    OP_TASK_POP,
-    OP_TASK_PUSH_OK,
-    OP_TASK_POP_OK,
-    OP_BAD_OPERATION,
+void TaskClientService::handleTaskPushPop(Service* service, Session& session, const Operation& in) {
+    if (in.opCode().getOpCode() == kOperationTaskPush.getOpCode()) {
+        session.curState = SC_TASK_PUSH_WAIT_OK;
+    } else if (in.opCode().getOpCode() == kOperationTaskPop.getOpCode()) {
+        session.curState = SC_TASK_POP_WAIT_OK;
+    }
+    in.write(session.fd);
 };
 
-void TaskClientService::handleTaskPushPop(Session& session, const Operation& in, Operation& out) {
-    if (session.curState != C_INIT) {
-        Debug("state %d\n", session.curState); 
-        throw Exception(RC_OP_WRONG_CODE);
-    }
-    if (in.opCode() == OP_TASK_PUSH) {
-        session.curState = C_TASK_PUSH;
-    } else if (in.opCode() == OP_TASK_POP) {
-        session.curState = C_TASK_POP;
-    }
-
-    out = in; 
-    session.send = true;
-};
-
-void TaskClientService::handleTaskPushOK(Session& session, const Operation& in, Operation& out) {
-    if (session.curState != C_TASK_PUSH) {
-        Debug("state %d\n", session.curState); 
-        throw Exception(RC_OP_WRONG_CODE);
-    }
-
-    session.curState = C_INIT;
+void TaskClientService::handleTaskPushOK(Service* service, Session& session, const Operation& in) {
+    session.curState = SC_INIT;
     Info("C: Task pushed.\n");
 }
 
-void TaskClientService::handleTaskPopOK(Session& session, const Operation& in, Operation& out) {
-    if (session.curState != C_TASK_POP) {
-        Debug("state %d\n", session.curState); 
-        throw Exception(RC_OP_WRONG_CODE);
-    }
-
-    Task task;
-    Package2Task(in.getCdata(), task);
-
-    session.curState = C_INIT;
+void TaskClientService::handleTaskPopOK(Service* service, Session& session, const Operation& in) {
+    Task task = in.toTask();
+    session.curState = SC_INIT;
     Info("S: Pop task \"%s\".\n", task.getName().c_str());
 }

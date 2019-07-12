@@ -5,6 +5,16 @@
 #include "log.hh"
 #include "exception.hh"
 
+enum {
+    SC_AUTH_WAIT_INIT,
+    SC_AUTH_WAIT_HASH,
+    SC_AUTH_WAIT_OK,
+};
+
+static const OperationCode kOperationAuthInit(SVC_AUTH, SUB_AUTH_INIT);
+static const OperationCode kOperationAuthHash(SVC_AUTH, SUB_AUTH_HASH);
+static const OperationCode kOperationAuthOK(SVC_AUTH, SUB_AUTH_OK);
+
 //  Auth Server State Machine
 //
 //                  hasAuth == true                         hash not expected
@@ -15,25 +25,11 @@
 //                | hasAuth == false                                       |
 //                +--------------------------------------------------------+--> S_INIT
 //
-void AuthServerService::handleOperation(OperationCode op, Session& session,
-        const Operation& in, Operation& out) {
-    switch (op) {
-    case OP_AUTH_INIT:
-        handleAuthInit(session, in, out);
-        break;
-    case OP_AUTH_HASH:
-        handleAuthHash(session, in, out);
-        break;
-    default:
-        assert(0);
-    }
+AuthServerService::AuthServerService(const std::string& key) : 
+                Hasher(key) {
+    _entryMap[kOperationAuthInit.getOpCode()] = OperationEntry(handleAuthInit, SC_AUTH_WAIT_INIT);
+    _entryMap[kOperationAuthHash.getOpCode()] = OperationEntry(handleAuthHash, SC_AUTH_WAIT_HASH);
 }
-
-const OperationCode AuthServerService::_operations[] = {
-    OP_AUTH_INIT,
-    OP_AUTH_HASH,
-    OP_BAD_OPERATION,
-};
 
 std::string AuthServerService::generateToken() const {
 
@@ -54,42 +50,42 @@ std::string AuthServerService::generateToken() const {
     return ss.str();
 }
 
-void AuthServerService::handleAuthInit(Session& session, const Operation& in, Operation& out) {
-    if (session.curState != S_AUTH_INIT) {
-        Debug("state %d\n", session.curState); 
-        throw Exception(RC_OP_WRONG_CODE);
-    }
-    std::string token = generateToken();
-    String2Package(token, out.getData());
-    out.setOpCode(OP_AUTH_INIT);
-    session.send = true;
+void AuthServerService::handleAuthInit(Service* service, Session& session, const Operation& in) {
+    AuthServerService* svc = dynamic_cast<AuthServerService*>(service);
+    assert(svc);
+
+    std::string token = svc->generateToken();
+    Operation out(kOperationAuthInit);
+    out.fromString(token);
     session.data = token;
-    session.curState = S_AUTH_WAIT_HASH;
+    session.curState = SC_AUTH_WAIT_HASH;
+    out.write(session.fd);
 };
 
-void AuthServerService::handleAuthHash(Session& session, const Operation& in, Operation& out) {
-    if (session.curState != S_AUTH_WAIT_HASH) {
-        Debug("state %d\n", session.curState); 
-        throw Exception(RC_OP_WRONG_CODE);
-    }
+void AuthServerService::handleAuthHash(Service* service, Session& session, const Operation& in) {
+    AuthServerService* svc = dynamic_cast<AuthServerService*>(service);
+    assert(svc);
+
     const std::string& token = session.data;
-    std::string expectedHash = hash(token.c_str(), token.length());
-    std::string hashStr;
-    Package2String(in.getCdata(), hashStr);
+    std::string expectedHash = svc->hash(token.c_str(), token.length());
+    std::string hashStr = in.toString();
 
     if (expectedHash == hashStr) {
         Info("S: Auth OK.\n");
-        out.setOpCode(OP_AUTH_OK);
-        session.curState = S_INIT;
+        Operation(kOperationAuthOK).write(session.fd);
+        session.curState = SC_INIT;
     } else {
         Info("S: Auth BAD.\n");
         Debug("Expect hash %s.\n", expectedHash.c_str());
         Debug("Got hash %s.\n", hashStr.c_str());
-        out.setOpCode(OP_DONE);
-        String2Package("Bad hash string.", out.getData());
-        session.curState = S_DONE;
+
+        Operation out(OP_DONE);
+        out.fromString(std::string("Bad hash string"));
+        out.write(session.fd);
+
+        session.curState = SC_DONE;
     }
-    session.send = true;
+    session.data = "";
 }
 
 //  Auth Client State Machine
@@ -102,47 +98,26 @@ void AuthServerService::handleAuthHash(Session& session, const Operation& in, Op
 //                | OP_AUTH_INIT (no key)                                      |
 //                +------------------------------------------------------------+-> C_INIT
 //
-const OperationCode AuthClientService::_operations[] = {
-    OP_AUTH_INIT,
-    OP_AUTH_OK,
-    OP_BAD_OPERATION,
-};
-
-void AuthClientService::handleOperation(OperationCode op, Session& session,
-        const Operation& in, Operation& out) {
-    switch (op) {
-    case OP_AUTH_INIT:
-        handleAuthInit(session, in, out);
-        break;
-    case OP_AUTH_OK:
-        handleAuthOK(session, in, out);
-        break;
-    default:
-        assert(0);
-    }
+AuthClientService::AuthClientService(const std::string& key) : 
+                Hasher(key) {
+    _entryMap[kOperationAuthInit.getOpCode()] = OperationEntry(handleAuthInit, SC_AUTH_WAIT_INIT);
+    _entryMap[kOperationAuthOK.getOpCode()] = OperationEntry(handleAuthOK, SC_AUTH_WAIT_OK);
 }
 
-void AuthClientService::handleAuthInit(Session& session, const Operation& in, Operation& out) {
-    if (session.curState != C_AUTH_INIT) {
-        Debug("state %d\n", session.curState); 
-        throw Exception(RC_OP_WRONG_CODE);
-    }
-    std::string token;
+void AuthClientService::handleAuthInit(Service* service, Session& session, const Operation& in) {
+    std::string token = in.toString();
     std::string hashStr;
-    Package2String(in.getCdata(), token);
-    hashStr = hash(token.c_str(), token.length());
-    String2Package(hashStr, out.getData());
-    out.setOpCode(OP_AUTH_HASH);
+    AuthClientService* svc = dynamic_cast<AuthClientService*>(service);
+    assert(svc);
+    hashStr = svc->hash(token.c_str(), token.length());
+    Operation out(kOperationAuthHash);
+    out.fromString(hashStr);
+    out.write(session.fd);
 
-    session.curState = C_AUTH_WAIT_RESULT;
-    session.send = true;
+    session.curState = SC_AUTH_WAIT_OK;
 }
 
-void AuthClientService::handleAuthOK(Session& session, const Operation& in, Operation& out) {
-    if (session.curState != C_AUTH_WAIT_RESULT) {
-        Debug("state %d\n", session.curState); 
-        throw Exception(RC_OP_WRONG_CODE);
-    }
-    session.curState = C_INIT;
+void AuthClientService::handleAuthOK(Service* service, Session& session, const Operation& in) {
+    session.curState = SC_INIT;
     Info("C: Auth OK.\n");
 }

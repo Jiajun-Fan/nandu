@@ -2,31 +2,37 @@
 #include "service.hh"
 #include "queue.hh"
 
+enum {
+    SUB_TASK_PUSH,
+    SUB_TASK_POP,
+    SUB_TASK_PUSH_OK,
+    SUB_TASK_POP_OK,
+};
+
 class TaskServerService : public Service, public Queue {
 public:
-    virtual void handleOperation(OperationCode op, Session& session,
-                           const Operation& in, Operation& out);
+    int getServiceCode() const { return SVC_TASK; }
+    virtual const EntryMap& getEntryMap() const { return _entryMap; }
 
-    TaskServerService() {}
+    TaskServerService();
     virtual ~TaskServerService() {}
-    virtual const OperationCode* getOperations() const { return _operations; }
 private:
-    void handleTaskPush(Session& session, const Operation& in, Operation& out);
-    void handleTaskPop(Session& session, const Operation& in, Operation& out);
-    static const OperationCode _operations[];
+    static void handleTaskPush(Service* service, Session& session, const Operation& in);
+    static void handleTaskPop(Service* service, Session& session, const Operation& in);
+
+    EntryMap                            _entryMap;
 };
 
 class TaskClientService : public Service {
 public:
-    virtual void handleOperation(OperationCode op, Session& session,
-                           const Operation& in, Operation& out);
+    int getServiceCode() const { return SVC_TASK; }
+    virtual const EntryMap& getEntryMap() const { return _entryMap; }
 
-    TaskClientService() {}
+    TaskClientService();
     virtual ~TaskClientService() {}
-    virtual const OperationCode* getOperations() const { return _operations; }
 private:
-    void handleTaskPushPop(Session& session, const Operation& in, Operation& out);
-    void handleTaskPushOK(Session& session, const Operation& in, Operation& out);
-    void handleTaskPopOK(Session& session, const Operation& in, Operation& out);
-    static const OperationCode _operations[];
+    static void handleTaskPushPop(Service* service, Session& session, const Operation& in);
+    static void handleTaskPushOK(Service* service, Session& session, const Operation& in);
+    static void handleTaskPopOK(Service* service, Session& session, const Operation& in);
+    EntryMap                            _entryMap;
 };
