@@ -20,27 +20,29 @@ void ServiceManager::registerService(Service* service) {
 
 void ServiceManager::runOperation(Session& session, const Operation& op) {
 
-    OperationCode opCode = OperationCode(op.getOpCode());
-    auto sit = _servicesMap.find(opCode.getSvcCode());
+    int opCode = op.getOpCode();
+    int svcCode = genSvcCode(opCode);
+    auto sit = _servicesMap.find(svcCode);
     if (sit == _servicesMap.end()) {
-        Debug("bad service %d\n", opCode.getSvcCode());
+        Debug("bad service %d\n", svcCode);
         throw Exception(RC_OP_UNSUPPORTED);
     }
 
     Service* service = sit->second;
     const Service::EntryMap& entryMap = service->getEntryMap();
-    const Service::EntryMap::const_iterator eit = entryMap.find(opCode.getOpCode());
+    const Service::EntryMap::const_iterator eit = entryMap.find(opCode);
     if (eit == entryMap.end()) {
         Debug("service %d, bad operation %d\n",
-                opCode.getSvcCode(), opCode.getOpCode());
+                svcCode, opCode);
         throw Exception(RC_OP_UNSUPPORTED);
     }
 
     const Service::OperationEntry& entry = eit->second;
     if (session.curState != entry.expected) {
-        Debug("service %d, operation %d, bad state %d\n",
-                opCode.getSvcCode(), opCode.getOpCode(),
-                session.curState);
+        Debug("service %d, operation %d, bad state %d, expect %d\n",
+                svcCode, opCode,
+                session.curState,
+                entry.expected);
         throw Exception(RC_OP_WRONG_CODE);
     }
 

@@ -4,11 +4,12 @@
 
 class Service;
 enum {
+    SC_BAD = -1,
     SC_DONE,
-    SC_AUTH_INIT,
     SC_INIT,
-    SC_BAD,
 };
+
+inline constexpr int genStateCode(int svc, int subSc) { return (svc << 8) + subSc; }
 
 typedef struct {
     int                         fd;

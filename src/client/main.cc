@@ -18,12 +18,12 @@ int main() {
     Task task("fuck");
 
     try {
-        Operation opPush(SVC_TASK, SUB_TASK_PUSH);
+        Operation opPush(TaskEnum::kOpPush);
         opPush.fromTask(Task("fuck"));
         session = client.start();
         client.run(session, opPush);
-        client.run(session, Operation(SVC_TASK, SUB_TASK_POP));
-        client.run(session, Operation(SVC_TASK, SUB_TASK_POP));
+        client.run(session, Operation(TaskEnum::kOpPop));
+        client.run(session, Operation(TaskEnum::kOpPop));
         client.end(session);
     } catch (Exception e) {
         if (session.fd != 0) {

@@ -197,10 +197,10 @@ void Server::handleConnection(int fd) {
     Session session = { fd, SC_INIT, "" };
 
     if (needAuth()) {
-        session.curState = SC_AUTH_INIT;
-        runOperation(session, Operation(SVC_AUTH, SUB_AUTH_INIT));
+        session.curState = AuthEnum::kScWaitInit;
+        runOperation(session, Operation(AuthEnum::kOpInit));
     } else {
-        Operation(SVC_AUTH, SUB_AUTH_INIT).write(session.fd);
+        Operation(AuthEnum::kOpInit).write(session.fd);
     }
 
     while (session.curState != SC_DONE) {

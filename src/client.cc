@@ -44,14 +44,14 @@ Session Client::start() {
     Operation auth;
     auth.read(session.fd);
 
-    if (auth.getOpCode() != OperationCode(SVC_AUTH, SUB_AUTH_INIT).getOpCode()) {
+    if (auth.getOpCode() != AuthEnum::kOpInit) {
         Debug("opcode %d\n", auth.getOpCode());
         throw Exception(RC_OP_WRONG_CODE);
     }
 
     if (auth.getData().size() != 0) {
         if (hasAuth()) {
-            session.curState = SC_INIT;
+            session.curState = AuthEnum::kScWaitInit;
             runOperation(session, auth);
         } else {
             // not able to auth, abort

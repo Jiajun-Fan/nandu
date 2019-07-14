@@ -5,15 +5,12 @@
 #include "log.hh"
 #include "exception.hh"
 
-enum {
-    SC_AUTH_WAIT_INIT,
-    SC_AUTH_WAIT_HASH,
-    SC_AUTH_WAIT_OK,
-};
-
-static const int kOperationAuthInit = OperationCode(SVC_AUTH, SUB_AUTH_INIT).getOpCode();
-static const int kOperationAuthHash = OperationCode(SVC_AUTH, SUB_AUTH_HASH).getOpCode();
-static const int kOperationAuthOK   = OperationCode(SVC_AUTH, SUB_AUTH_OK).getOpCode();
+const int AuthEnum::kOpInit     = genOperationCode(SVC_AUTH, OP_AUTH_INIT);
+const int AuthEnum::kOpHash     = genOperationCode(SVC_AUTH, OP_AUTH_HASH);
+const int AuthEnum::kOpOK       = genOperationCode(SVC_AUTH, OP_AUTH_OK);
+const int AuthEnum::kScWaitInit = genStateCode(SVC_AUTH, SC_AUTH_WAIT_INIT);
+const int AuthEnum::kScWaitHash = genStateCode(SVC_AUTH, SC_AUTH_WAIT_HASH);
+const int AuthEnum::kScWaitOK   = genStateCode(SVC_AUTH, SC_AUTH_WAIT_OK);
 
 //  Auth Server State Machine
 //
@@ -27,8 +24,8 @@ static const int kOperationAuthOK   = OperationCode(SVC_AUTH, SUB_AUTH_OK).getOp
 //
 AuthServerService::AuthServerService(const std::string& key) : 
                 Hasher(key) {
-    _entryMap[kOperationAuthInit] = OperationEntry(handleAuthInit, SC_AUTH_WAIT_INIT);
-    _entryMap[kOperationAuthHash] = OperationEntry(handleAuthHash, SC_AUTH_WAIT_HASH);
+    _entryMap[kOpInit] = OperationEntry(handleAuthInit, kScWaitInit);
+    _entryMap[kOpHash] = OperationEntry(handleAuthHash, kScWaitHash);
 }
 
 std::string AuthServerService::generateToken() const {
@@ -55,10 +52,10 @@ void AuthServerService::handleAuthInit(Service* service, Session& session, const
     assert(svc);
 
     std::string token = svc->generateToken();
-    Operation out(kOperationAuthInit);
+    Operation out(kOpInit);
     out.fromString(token);
     session.data = token;
-    session.curState = SC_AUTH_WAIT_HASH;
+    session.curState = kScWaitHash;
     out.write(session.fd);
 };
 
@@ -72,7 +69,7 @@ void AuthServerService::handleAuthHash(Service* service, Session& session, const
 
     if (expectedHash == hashStr) {
         Info("S: Auth OK.\n");
-        Operation(kOperationAuthOK).write(session.fd);
+        Operation(kOpOK).write(session.fd);
         session.curState = SC_INIT;
     } else {
         Info("S: Auth BAD.\n");
@@ -100,8 +97,8 @@ void AuthServerService::handleAuthHash(Service* service, Session& session, const
 //
 AuthClientService::AuthClientService(const std::string& key) : 
                 Hasher(key) {
-    _entryMap[kOperationAuthInit] = OperationEntry(handleAuthInit, SC_AUTH_WAIT_INIT);
-    _entryMap[kOperationAuthOK] = OperationEntry(handleAuthOK, SC_AUTH_WAIT_OK);
+    _entryMap[kOpInit] = OperationEntry(handleAuthInit, kScWaitInit);
+    _entryMap[kOpOK] = OperationEntry(handleAuthOK, kScWaitOK);
 }
 
 void AuthClientService::handleAuthInit(Service* service, Session& session, const Operation& in) {
@@ -110,11 +107,11 @@ void AuthClientService::handleAuthInit(Service* service, Session& session, const
     AuthClientService* svc = dynamic_cast<AuthClientService*>(service);
     assert(svc);
     hashStr = svc->hash(token.c_str(), token.length());
-    Operation out(kOperationAuthHash);
+    Operation out(kOpHash);
     out.fromString(hashStr);
     out.write(session.fd);
 
-    session.curState = SC_AUTH_WAIT_OK;
+    session.curState = kScWaitOK;
 }
 
 void AuthClientService::handleAuthOK(Service* service, Session& session, const Operation& in) {
