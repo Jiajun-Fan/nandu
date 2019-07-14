@@ -206,7 +206,7 @@ void Server::handleConnection(int fd) {
     while (session.curState != SC_DONE) {
         Operation in;
         in.read(session.fd);
-        if (in.opCode().getOpCode() == OP_DONE) {
+        if (in.getOpCode() == OP_DONE) {
             //Debug("%s\n", in.toString().c_str());
             break;
         }

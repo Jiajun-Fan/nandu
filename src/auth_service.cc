@@ -11,9 +11,9 @@ enum {
     SC_AUTH_WAIT_OK,
 };
 
-static const OperationCode kOperationAuthInit(SVC_AUTH, SUB_AUTH_INIT);
-static const OperationCode kOperationAuthHash(SVC_AUTH, SUB_AUTH_HASH);
-static const OperationCode kOperationAuthOK(SVC_AUTH, SUB_AUTH_OK);
+static const int kOperationAuthInit = OperationCode(SVC_AUTH, SUB_AUTH_INIT).getOpCode();
+static const int kOperationAuthHash = OperationCode(SVC_AUTH, SUB_AUTH_HASH).getOpCode();
+static const int kOperationAuthOK   = OperationCode(SVC_AUTH, SUB_AUTH_OK).getOpCode();
 
 //  Auth Server State Machine
 //
@@ -27,8 +27,8 @@ static const OperationCode kOperationAuthOK(SVC_AUTH, SUB_AUTH_OK);
 //
 AuthServerService::AuthServerService(const std::string& key) : 
                 Hasher(key) {
-    _entryMap[kOperationAuthInit.getOpCode()] = OperationEntry(handleAuthInit, SC_AUTH_WAIT_INIT);
-    _entryMap[kOperationAuthHash.getOpCode()] = OperationEntry(handleAuthHash, SC_AUTH_WAIT_HASH);
+    _entryMap[kOperationAuthInit] = OperationEntry(handleAuthInit, SC_AUTH_WAIT_INIT);
+    _entryMap[kOperationAuthHash] = OperationEntry(handleAuthHash, SC_AUTH_WAIT_HASH);
 }
 
 std::string AuthServerService::generateToken() const {
@@ -100,8 +100,8 @@ void AuthServerService::handleAuthHash(Service* service, Session& session, const
 //
 AuthClientService::AuthClientService(const std::string& key) : 
                 Hasher(key) {
-    _entryMap[kOperationAuthInit.getOpCode()] = OperationEntry(handleAuthInit, SC_AUTH_WAIT_INIT);
-    _entryMap[kOperationAuthOK.getOpCode()] = OperationEntry(handleAuthOK, SC_AUTH_WAIT_OK);
+    _entryMap[kOperationAuthInit] = OperationEntry(handleAuthInit, SC_AUTH_WAIT_INIT);
+    _entryMap[kOperationAuthOK] = OperationEntry(handleAuthOK, SC_AUTH_WAIT_OK);
 }
 
 void AuthClientService::handleAuthInit(Service* service, Session& session, const Operation& in) {

@@ -20,7 +20,7 @@ void ServiceManager::registerService(Service* service) {
 
 void ServiceManager::runOperation(Session& session, const Operation& op) {
 
-    OperationCode opCode = op.opCode();
+    OperationCode opCode = OperationCode(op.getOpCode());
     auto sit = _servicesMap.find(opCode.getSvcCode());
     if (sit == _servicesMap.end()) {
         Debug("bad service %d\n", opCode.getSvcCode());

@@ -44,9 +44,8 @@ Session Client::start() {
     Operation auth;
     auth.read(session.fd);
 
-    // FIXME
-    if (auth.opCode().getOpCode() != OperationCode(SVC_AUTH, SUB_AUTH_INIT).getOpCode()) {
-        Debug("opcode %d\n", auth.opCode());
+    if (auth.getOpCode() != OperationCode(SVC_AUTH, SUB_AUTH_INIT).getOpCode()) {
+        Debug("opcode %d\n", auth.getOpCode());
         throw Exception(RC_OP_WRONG_CODE);
     }
 
@@ -57,7 +56,7 @@ Session Client::start() {
         } else {
             // not able to auth, abort
             Operation(OP_DONE).write(session.fd);
-            Debug("opcode %d\n", auth.opCode());
+            Debug("opcode %d\n", auth.getOpCode());
             throw Exception(RC_OP_UNSUPPORTED);
         }
     }
@@ -65,7 +64,7 @@ Session Client::start() {
     while (session.curState != SC_INIT) {
         Operation in;
         in.read(session.fd);
-        if (in.opCode().getOpCode() == OP_DONE) {
+        if (in.getOpCode() == OP_DONE) {
             Debug("%s\n", in.toString().c_str());
             throw Exception(RC_SERVER_CLOSED);
         }
@@ -80,7 +79,7 @@ void Client::run(Session& session, const Operation& operation) {
     while (session.curState != SC_INIT) {
         Operation in;
         in.read(session.fd);
-        if (in.opCode().getOpCode() == OP_DONE) {
+        if (in.getOpCode() == OP_DONE) {
             Debug("%s\n", in.toString().c_str());
             throw Exception(RC_SERVER_CLOSED);
         }

@@ -8,14 +8,14 @@ enum {
     SC_TASK_POP_WAIT_OK,
 };
 
-static const OperationCode kOperationTaskPush(SVC_TASK, SUB_TASK_PUSH);
-static const OperationCode kOperationTaskPop(SVC_TASK, SUB_TASK_POP);
-static const OperationCode kOperationTaskPushOK(SVC_TASK, SUB_TASK_PUSH_OK);
-static const OperationCode kOperationTaskPopOK(SVC_TASK, SUB_TASK_POP_OK);
+static const int kOperationTaskPush   = OperationCode(SVC_TASK, SUB_TASK_PUSH).getOpCode();
+static const int kOperationTaskPop    = OperationCode(SVC_TASK, SUB_TASK_POP).getOpCode();
+static const int kOperationTaskPushOK = OperationCode(SVC_TASK, SUB_TASK_PUSH_OK).getOpCode();
+static const int kOperationTaskPopOK  = OperationCode(SVC_TASK, SUB_TASK_POP_OK).getOpCode();
 
 TaskServerService::TaskServerService() {
-    _entryMap[kOperationTaskPush.getOpCode()] = OperationEntry(handleTaskPush, SC_INIT);
-    _entryMap[kOperationTaskPop.getOpCode()] = OperationEntry(handleTaskPop, SC_INIT);
+    _entryMap[kOperationTaskPush] = OperationEntry(handleTaskPush, SC_INIT);
+    _entryMap[kOperationTaskPop] = OperationEntry(handleTaskPop, SC_INIT);
 }
 
 void TaskServerService::handleTaskPush(Service* service, Session& session, const Operation& in) {
@@ -41,16 +41,16 @@ void TaskServerService::handleTaskPop(Service* service, Session& session, const 
 };
 
 TaskClientService::TaskClientService() {
-    _entryMap[kOperationTaskPush.getOpCode()] = OperationEntry(handleTaskPushPop, SC_INIT);
-    _entryMap[kOperationTaskPop.getOpCode()] = OperationEntry(handleTaskPushPop, SC_INIT);
-    _entryMap[kOperationTaskPushOK.getOpCode()] = OperationEntry(handleTaskPushOK, SC_TASK_PUSH_WAIT_OK);
-    _entryMap[kOperationTaskPopOK.getOpCode()] = OperationEntry(handleTaskPopOK, SC_TASK_POP_WAIT_OK);
+    _entryMap[kOperationTaskPush] = OperationEntry(handleTaskPushPop, SC_INIT);
+    _entryMap[kOperationTaskPop] = OperationEntry(handleTaskPushPop, SC_INIT);
+    _entryMap[kOperationTaskPushOK] = OperationEntry(handleTaskPushOK, SC_TASK_PUSH_WAIT_OK);
+    _entryMap[kOperationTaskPopOK] = OperationEntry(handleTaskPopOK, SC_TASK_POP_WAIT_OK);
 }
 
 void TaskClientService::handleTaskPushPop(Service* service, Session& session, const Operation& in) {
-    if (in.opCode().getOpCode() == kOperationTaskPush.getOpCode()) {
+    if (in.getOpCode() == kOperationTaskPush) {
         session.curState = SC_TASK_PUSH_WAIT_OK;
-    } else if (in.opCode().getOpCode() == kOperationTaskPop.getOpCode()) {
+    } else if (in.getOpCode() == kOperationTaskPop) {
         session.curState = SC_TASK_POP_WAIT_OK;
     }
     in.write(session.fd);

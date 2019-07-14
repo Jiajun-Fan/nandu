@@ -71,8 +71,8 @@ public:
     void read(int fd);
     void write(int fd) const;
 
-    OperationCode opCode() const { return *_raw; }
-    void setOpCode(OperationCode op) { *_raw = op; }
+    int getOpCode() const { return _raw->getOpCode(); }
+    void setOpCode(int op) { *_raw = OperationCode(op); }
 
     const Package& getCData() const { return _opData; }
     Package& getData() { return _opData; }
