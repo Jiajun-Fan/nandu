@@ -12,7 +12,7 @@ public:
     Client(const std::string& host, int port);
     virtual ~Client();
 
-    Session start();
+    void start(Session& session);
     void run(Session& session, const Operation& operation);
     void end(Session& session);
 

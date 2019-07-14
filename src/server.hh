@@ -23,7 +23,7 @@ typedef void (*SignalHandler)(int, siginfo_t*);
 
 class Server : public ServiceManager {
 public:
-    Server(bool local, int port);
+    Server(bool local, int port, int backlog);
     virtual ~Server();
     void run();
     void handleConnection(int fd);
@@ -43,5 +43,5 @@ private:
     std::vector<pthread_t>      _tids;
 };
 
-Server* MakeServer(bool local, int port);
+Server* MakeServer(bool local, int port, int backlog);
 Server* GetServer();

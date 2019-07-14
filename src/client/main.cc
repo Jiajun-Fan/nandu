@@ -13,14 +13,14 @@ int main() {
     Client client("127.0.0.1", 6161);
     client.registerService(new AuthClientService("password"));
     client.registerService(new TaskClientService());
-    Session session = { 0, SC_INIT, ""};
+    Session session = { 0, SC_INIT, "" };
 
     Task task("fuck");
 
     try {
         Operation opPush(TaskEnum::kOpPush);
         opPush.fromTask(Task("fuck"));
-        session = client.start();
+        client.start(session);
         client.run(session, opPush);
         client.run(session, Operation(TaskEnum::kOpPop));
         client.run(session, Operation(TaskEnum::kOpPop));

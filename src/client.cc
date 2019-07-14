@@ -37,9 +37,11 @@ int Client::connect() {
     return sockFd;
 }
 
-Session Client::start() {
+void Client::start(Session& session) {
 
-    Session session = { this->connect(), SC_INIT, "" };
+    session.fd = this->connect();
+    session.curState = SC_INIT;
+    session.data = "";
 
     Operation auth;
     auth.read(session.fd);
@@ -70,8 +72,6 @@ Session Client::start() {
         }
         runOperation(session, in);
     }
-
-    return session;
 }
 
 void Client::run(Session& session, const Operation& operation) {

@@ -18,12 +18,12 @@
 const int kTimeout = 10;
 static Server* kSingletonServer = NULL;
 
-Server* MakeServer(bool local, int port) {
+Server* MakeServer(bool local, int port, int backlog) {
     if (kSingletonServer != NULL) {
         Fatal("Only one server is allowed!\n");
         exit(-1);
     }
-    kSingletonServer = new Server(local, port);
+    kSingletonServer = new Server(local, port, backlog);
     return kSingletonServer;
 }
 
@@ -41,7 +41,7 @@ static void cleanUpThread(Connection* conn) {
     timer_delete(conn->timerId);
     pthread_t tid = pthread_self();
     conn->server->addThreadToBeJoin(tid);
-    close(conn->fd);
+    int ret = close(conn->fd);
     delete conn;
     called.store(false);
     pthread_exit(NULL);
@@ -99,9 +99,9 @@ static void IntruptedHandler(int sig) {
     exit(-1);
 }
 
-Server::Server(bool local, int port) : 
+Server::Server(bool local, int port, int backlog) : 
     _local(local), _port(port), 
-    _nb_conn(10) {
+    _nb_conn(backlog) {
     _sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     assert(_sock_fd > 0);
     pthread_mutex_init(&_lock, NULL);
@@ -109,7 +109,8 @@ Server::Server(bool local, int port) :
 
 Server::~Server() {
     if (_sock_fd) {
-        close(_sock_fd);
+        int ret = close(_sock_fd);
+        Debug("Socket %d closed\n", _sock_fd);
         _sock_fd = 0;
     }
     pthread_mutex_destroy(&_lock);
@@ -212,4 +213,5 @@ void Server::handleConnection(int fd) {
         }
         runOperation(session, in);
     }
+    sleep(2);
 }
