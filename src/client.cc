@@ -51,10 +51,11 @@ void Client::start(Session& session) {
         throw Exception(RC_OP_WRONG_CODE);
     }
 
+    Operation dummy;
     if (auth.getData().size() != 0) {
         if (hasAuth()) {
             session.curState = AuthEnum::kScWaitInit;
-            runOperation(session, auth);
+            runOperation(session, auth, dummy);
         } else {
             // not able to auth, abort
             Operation(OP_DONE).write(session.fd);
@@ -70,12 +71,12 @@ void Client::start(Session& session) {
             Debug("%s\n", in.toString().c_str());
             throw Exception(RC_SERVER_CLOSED);
         }
-        runOperation(session, in);
+        runOperation(session, in, dummy);
     }
 }
 
-void Client::run(Session& session, const Operation& operation) {
-    runOperation(session, operation);
+void Client::run(Session& session, const Operation& operation, Operation& out) {
+    runOperation(session, operation, out);
     while (session.curState != SC_INIT) {
         Operation in;
         in.read(session.fd);
@@ -83,7 +84,7 @@ void Client::run(Session& session, const Operation& operation) {
             Debug("%s\n", in.toString().c_str());
             throw Exception(RC_SERVER_CLOSED);
         }
-        runOperation(session, in);
+        runOperation(session, in, out);
     }
 }
 

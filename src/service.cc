@@ -18,7 +18,7 @@ void ServiceManager::registerService(Service* service) {
     _servicesMap[code] = service;
 }
 
-void ServiceManager::runOperation(Session& session, const Operation& op) {
+void ServiceManager::runOperation(Session& session, const Operation& op, Operation& out) {
 
     int opCode = op.getOpCode();
     int svcCode = genSvcCode(opCode);
@@ -46,5 +46,5 @@ void ServiceManager::runOperation(Session& session, const Operation& op) {
         throw Exception(RC_OP_WRONG_CODE);
     }
 
-    entry.hd(service, session, op);
+    entry.hd(service, session, op, out);
 }

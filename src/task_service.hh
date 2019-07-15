@@ -31,8 +31,8 @@ public:
     TaskServerService();
     virtual ~TaskServerService() {}
 private:
-    static void handleTaskPush(Service* service, Session& session, const Operation& in);
-    static void handleTaskPop(Service* service, Session& session, const Operation& in);
+    static void handleTaskPush(Service* service, Session& session, const Operation& in, Operation& out);
+    static void handleTaskPop(Service* service, Session& session, const Operation& in, Operation& out);
 
     EntryMap                            _entryMap;
 };
@@ -45,8 +45,8 @@ public:
     TaskClientService();
     virtual ~TaskClientService() {}
 private:
-    static void handleTaskPushPop(Service* service, Session& session, const Operation& in);
-    static void handleTaskPushOK(Service* service, Session& session, const Operation& in);
-    static void handleTaskPopOK(Service* service, Session& session, const Operation& in);
+    static void handleTaskPushPop(Service* service, Session& session, const Operation& in, Operation& out);
+    static void handleTaskPushOK(Service* service, Session& session, const Operation& in, Operation& out);
+    static void handleTaskPopOK(Service* service, Session& session, const Operation& in, Operation& out);
     EntryMap                            _entryMap;
 };

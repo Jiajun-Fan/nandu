@@ -196,10 +196,13 @@ void Server::run() {
 void Server::handleConnection(int fd) {
 
     Session session = { fd, SC_INIT, "" };
+    // all the operations performed on server side don't
+    // have output
+    Operation dummy;
 
     if (needAuth()) {
         session.curState = AuthEnum::kScWaitInit;
-        runOperation(session, Operation(AuthEnum::kOpInit));
+        runOperation(session, Operation(AuthEnum::kOpInit), dummy);
     } else {
         Operation(AuthEnum::kOpInit).write(session.fd);
     }
@@ -211,7 +214,7 @@ void Server::handleConnection(int fd) {
             //Debug("%s\n", in.toString().c_str());
             break;
         }
-        runOperation(session, in);
+        runOperation(session, in, dummy);
     }
     sleep(2);
 }

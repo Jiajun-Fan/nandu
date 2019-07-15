@@ -49,6 +49,7 @@ public:
         *_raw = OP_BAD;
     }
     virtual ~Operation() {
+        // it's OK to free NULL, no check needed
         free(_raw);
     }
     void read(int fd);
@@ -56,6 +57,8 @@ public:
 
     int getOpCode() const { return *_raw; }
     void setOpCode(int op) { *_raw = op; }
+
+    size_t getDataSize() const { return _dataSize; }
 
     const Package& getCData() const { return _opData; }
     Package& getData() { return _opData; }
@@ -73,6 +76,12 @@ public:
     virtual void fromString(const std::string& str) { getData().fromString(str); }
     virtual Task toTask() const { return getCData().toTask(); }
     virtual void fromTask(const Task& task) { getData().fromTask(task); }
+
+    Operation& operator=(const Operation& old) {
+        _dataSize = old.getDataSize();
+        _raw = (int*)malloc(old.size());
+        memmove(_raw, old.cData(), old.size());
+    }
 
 private:
     int*                        _raw;

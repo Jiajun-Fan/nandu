@@ -13,7 +13,7 @@ public:
     virtual ~Client();
 
     void start(Session& session);
-    void run(Session& session, const Operation& operation);
+    void run(Session& session, const Operation& operation, Operation& out);
     void end(Session& session);
 
 private:

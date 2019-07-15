@@ -39,8 +39,8 @@ public:
     static int kScAuthWaitHash;
 private:
     std::string generateToken() const;
-    static void handleAuthInit(Service* service, Session& session, const Operation& in);
-    static void handleAuthHash(Service* service, Session& session, const Operation& in);
+    static void handleAuthInit(Service* service, Session& session, const Operation& in, Operation& out);
+    static void handleAuthHash(Service* service, Session& session, const Operation& in, Operation& out);
 
     EntryMap                            _entryMap;
 };
@@ -58,8 +58,8 @@ public:
     static int kScAuthWaitInit;
     static int kScAuthWaitOK;
 private:
-    static void handleAuthInit(Service* service, Session& session, const Operation& in);
-    static void handleAuthOK(Service* service, Session& session, const Operation& in);
+    static void handleAuthInit(Service* service, Session& session, const Operation& in, Operation& out);
+    static void handleAuthOK(Service* service, Session& session, const Operation& in, Operation& out);
 
     EntryMap                            _entryMap;
 };

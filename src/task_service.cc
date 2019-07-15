@@ -15,7 +15,7 @@ TaskServerService::TaskServerService() {
     _entryMap[kOpPop] = OperationEntry(handleTaskPop, SC_INIT);
 }
 
-void TaskServerService::handleTaskPush(Service* service, Session& session, const Operation& in) {
+void TaskServerService::handleTaskPush(Service* service, Session& session, const Operation& in, Operation& out) {
     TaskServerService* svc = dynamic_cast<TaskServerService*>(service);
     assert(svc);
 
@@ -25,14 +25,14 @@ void TaskServerService::handleTaskPush(Service* service, Session& session, const
     Info("S: Push task \"%s\".\n", task.getName().c_str());
 };
 
-void TaskServerService::handleTaskPop(Service* service, Session& session, const Operation& in) {
+void TaskServerService::handleTaskPop(Service* service, Session& session, const Operation& in, Operation& out) {
     TaskServerService* svc = dynamic_cast<TaskServerService*>(service);
     assert(svc);
 
     Task task = svc->popTask();
-    Operation out(kOpPopOK);
-    out.fromTask(task);
-    out.write(session.fd);
+    Operation send(kOpPopOK);
+    send.fromTask(task);
+    send.write(session.fd);
     Info("S: Pop task \"%s\".\n", task.getName().c_str());
     // no need to update session.curState, since it's still SC_INIT
 };
@@ -44,7 +44,7 @@ TaskClientService::TaskClientService() {
     _entryMap[kOpPopOK] = OperationEntry(handleTaskPopOK, kScPopWaitOK);
 }
 
-void TaskClientService::handleTaskPushPop(Service* service, Session& session, const Operation& in) {
+void TaskClientService::handleTaskPushPop(Service* service, Session& session, const Operation& in, Operation& out) {
     if (in.getOpCode() == kOpPush) {
         session.curState = kScPushWaitOK;
     } else if (in.getOpCode() == kOpPop) {
@@ -53,13 +53,11 @@ void TaskClientService::handleTaskPushPop(Service* service, Session& session, co
     in.write(session.fd);
 };
 
-void TaskClientService::handleTaskPushOK(Service* service, Session& session, const Operation& in) {
+void TaskClientService::handleTaskPushOK(Service* service, Session& session, const Operation& in, Operation& out) {
     session.curState = SC_INIT;
-    Info("C: Task pushed.\n");
 }
 
-void TaskClientService::handleTaskPopOK(Service* service, Session& session, const Operation& in) {
-    Task task = in.toTask();
+void TaskClientService::handleTaskPopOK(Service* service, Session& session, const Operation& in, Operation& out) {
+    out = in;
     session.curState = SC_INIT;
-    Info("C: Pop task \"%s\".\n", task.getName().c_str());
 }
