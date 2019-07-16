@@ -216,5 +216,4 @@ void Server::handleConnection(int fd) {
         }
         runOperation(session, in, dummy);
     }
-    sleep(2);
 }

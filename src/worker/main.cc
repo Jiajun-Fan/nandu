@@ -125,6 +125,8 @@ static void* runWorker(void* args) {
         while (1) {
             Operation pop;
             client.run(session, Operation(TaskEnum::kOpPop), pop);
+            Task task = pop.toTask();
+            task.run();
         }
         client.end(session);
     } catch (Exception e) {

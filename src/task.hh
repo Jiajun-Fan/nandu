@@ -20,6 +20,7 @@ public:
     const std::list<std::string>& getParams() const { return _params; }
     const std::string& getName() const { return _name; }
     void setName(const std::string& name) { _name = name; }
+    void run();
 
     void reset() { _name = ""; _params.clear(); }
 private:
